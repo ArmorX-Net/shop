@@ -10,7 +10,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
   if (localStorage.getItem('retailUser')) {
     loggedRetailer = localStorage.getItem('retailUser');
-    showAfterLogin();
+    if (typeof showAfterLogin === "function") showAfterLogin(); // In case this is used
+    document.getElementById('login-section').style.display = 'none';
+    document.getElementById('order-section').style.display = 'block';
+    if (document.getElementById('main-title')) document.getElementById('main-title').style.display = 'block';
+    if (document.getElementById('app-title')) document.getElementById('app-title').style.display = 'none';
     addWindowEntry();
   }
 });
@@ -20,7 +24,11 @@ function login() {
   if (!/^\d{10}$/.test(phone)) { alert('Enter valid 10-digit mobile.'); return; }
   localStorage.setItem('retailUser', phone);
   loggedRetailer = phone;
-  showAfterLogin();
+  if (typeof showAfterLogin === "function") showAfterLogin();
+  document.getElementById('login-section').style.display = 'none';
+  document.getElementById('order-section').style.display = 'block';
+  if (document.getElementById('main-title')) document.getElementById('main-title').style.display = 'block';
+  if (document.getElementById('app-title')) document.getElementById('app-title').style.display = 'none';
   addWindowEntry();
 }
 
@@ -29,13 +37,7 @@ function logout() {
   window.location.reload();
 }
 
-function showAfterLogin() {
-  document.getElementById('login-section').style.display = 'none';
-  document.getElementById('order-section').style.display = 'block';
-  document.getElementById('main-title').style.display = 'block';
-  document.getElementById('app-title').style.display = 'none';
-}
-
+// Support for delivery address field (call this from delivery select "onchange")
 function handleDeliveryChange() {
   const val = document.getElementById('delivery-mode').value;
   const addr = document.getElementById('cust-address');
@@ -74,10 +76,10 @@ function addWindowEntry() {
       </select>
       <input type="number" min="1" value="1" id="qty${idx}" placeholder="Qty" oninput="calcPrice(${idx})"/>
     </div>
-    <div class="price-link" id="priceblock${idx}">
+    <div class="price-link">
       <span class="price-label">Deal Price: ₹<span class="price-value" id="p${idx}">0</span></span>
+      <a id="a${idx}" href="#" class="amz-link" target="_blank" style="display:none;">Amazon</a>
     </div>
-    <a id="a${idx}" href="#" class="amz-link" target="_blank" style="display:none;">Amazon</a>
   `;
   document.getElementById('windows-list').appendChild(wBox);
 }
@@ -89,21 +91,15 @@ function removeWindowEntry(idx) {
 }
 
 function calcPrice(idx) {
-  let h = parseFloat(document.getElementById('h' + idx).value);
-  let w = parseFloat(document.getElementById('w' + idx).value);
+  let h = parseFloat(document.getElementById('h' + idx).value || 0);
+  let w = parseFloat(document.getElementById('w' + idx).value || 0);
   let u = document.getElementById('u' + idx).value;
   let c = document.getElementById('c' + idx).value;
-  let qty = parseInt(document.getElementById('qty' + idx).value);
+  let qty = parseInt(document.getElementById('qty' + idx).value || 1);
 
-  // Robust defaulting:
-  if (isNaN(h) || h <= 0) h = null;
-  if (isNaN(w) || w <= 0) w = null;
-  if (isNaN(qty) || qty <= 0) qty = 1;
-
-  if (!h || !w) {
+  if (!h || !w || !qty) {
     document.getElementById('p' + idx).innerText = '0';
     document.getElementById('a' + idx).style.display = 'none';
-    document.getElementById('priceblock' + idx).innerHTML = '<span class="deal-break">Deal Price: ₹<span class="price-value">0</span></span>';
     updateTotal();
     return;
   }
@@ -113,35 +109,23 @@ function calcPrice(idx) {
   let w_cm = u === "Cm" ? w : (u === "Inch" ? w * 2.54 : w * 30.48);
 
   let best = findClosestSize(h_cm, w_cm, c);
-  let priceblock = document.getElementById('priceblock' + idx);
-  if (best && !isNaN(best['Deal Price'])) {
-    let dealPrice = parseFloat(best['Deal Price']) || 0;
-    let totalPrice = dealPrice * qty;
-    if (!isFinite(totalPrice) || totalPrice <= 0) totalPrice = 0;
-
-    document.getElementById('p' + idx).innerText = totalPrice;
-
-    // Show per unit + total if qty > 1
-    let html = '';
-    if (qty > 1) {
-      html += `<span class="per-unit">Per Net: ₹${dealPrice}</span> `;
-    }
-    html += `<span class="deal-break">Deal Price: ₹<span class="price-value">${totalPrice}</span></span>`;
-    priceblock.innerHTML = html;
-
-    // Add Amazon link
+  if (best) {
+    // Use ONLY Deal Price (no fallback to Selling Price)
+    let dealUnit = parseFloat(best['Deal Price']) || 0;
+    let dealPrice = dealUnit * qty;
+    document.getElementById('p' + idx).innerText = dealPrice;
     let a = document.getElementById('a' + idx);
     a.href = best['Amazon Link'];
     a.style.display = '';
   } else {
     document.getElementById('p' + idx).innerText = '0';
-    priceblock.innerHTML = '<span class="deal-break">Deal Price: ₹<span class="price-value">0</span></span>';
     document.getElementById('a' + idx).style.display = 'none';
   }
   updateTotal();
 }
 
 function findClosestSize(h_cm, w_cm, c) {
+  // Find available net in cm, same color, minimize abs diff (height+width)
   let filtered = netSizes.filter(x => x.Color === c && x.Unit === "Cm");
   if (filtered.length === 0) return null;
   let best = filtered[0],
@@ -156,10 +140,10 @@ function findClosestSize(h_cm, w_cm, c) {
 function updateTotal() {
   let total = 0;
   document.querySelectorAll('[id^=p]').forEach(span => {
-    let val = parseFloat(span.innerText);
-    if (isFinite(val) && val > 0) total += val;
+    let val = parseFloat(span.innerText || 0);
+    if (isFinite(val)) total += val;
   });
-  document.getElementById('total-price').innerText = total || 0;
+  document.getElementById('total-price').innerText = total;
 }
 
 function sendOnWhatsApp() {
@@ -186,12 +170,8 @@ function sendOnWhatsApp() {
     let qty = document.getElementById('qty'+idx).value;
     let price = document.getElementById('p'+idx).innerText;
     let colorName = { BK: 'Black', CR: 'Cream', GR: 'Grey', WH: 'White' }[c] || c;
-    let perNet = Math.round(parseFloat(price)/parseFloat(qty));
-    if (h && w && price && qty > 0 && parseFloat(price) > 0) {
-      let priceStr = qty > 1
-        ? `Per Net: ₹${perNet} | Deal Price: ₹${price}`
-        : `Deal Price: ₹${price}`;
-      msg += `#${i+1}: ${h}x${w} ${u} | ${colorName} | Qty: ${qty} | ${priceStr}\n`;
+    if (h && w && price && qty > 0) {
+      msg += `#${i+1}: ${h}x${w} ${u} | ${colorName} | Qty: ${qty} | ₹${price}\n`;
       total += parseFloat(price);
       hasAny = true;
     }
