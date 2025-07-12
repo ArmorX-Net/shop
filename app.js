@@ -129,7 +129,7 @@ function calcPrice(idx) {
 }
 
 function findClosestSize(h_cm, w_cm, c) {
-  // Find available net in cm, same color, minimize abs diff (height+width)
+  // This is the original, simple closest logic from your working code!
   let filtered = netSizes.filter(x => x.Color === c && x.Unit === "Cm");
   if (filtered.length === 0) return null;
   let best = filtered[0],
