@@ -15,6 +15,11 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 });
 
+function logout() {
+  localStorage.removeItem('retailUser');
+  window.location.reload();
+}
+
 function login() {
   let phone = document.getElementById('retailer-phone').value.trim();
   if (!/^\d{10}$/.test(phone)) { alert('Enter valid 10-digit mobile.'); return; }
