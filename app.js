@@ -52,7 +52,7 @@ function addWindowEntry() {
       <input type="number" min="1" value="1" id="qty${idx}" placeholder="Qty" oninput="calcPrice(${idx})"/>
     </div>
     <div class="price-link">
-      <span>Price: ₹<span class="price-value" id="p${idx}">0</span></span>
+      <span class="price-label">Deal Price: ₹<span class="price-value" id="p${idx}">0</span></span>
       <a id="a${idx}" href="#" class="amz-link" target="_blank" style="display:none;">Amazon</a>
     </div>
   `;
@@ -79,10 +79,14 @@ function calcPrice(idx) {
     return;
   }
 
-  let best = findClosestSize(h, w, u, c);
+  // Convert all entered values to cm for searching
+  let h_cm = u === "Cm" ? h : (u === "Inch" ? h * 2.54 : h * 30.48);
+  let w_cm = u === "Cm" ? w : (u === "Inch" ? w * 2.54 : w * 30.48);
+
+  let best = findClosestSize(h_cm, w_cm, c);
   if (best) {
-    let price = (best['Selling Price'] || 0) * qty;
-    document.getElementById('p' + idx).innerText = price;
+    let dealPrice = (best['Deal Price'] || best['Selling Price'] || 0) * qty;
+    document.getElementById('p' + idx).innerText = dealPrice;
     let a = document.getElementById('a' + idx);
     a.href = best['Amazon Link'];
     a.style.display = '';
@@ -93,13 +97,14 @@ function calcPrice(idx) {
   updateTotal();
 }
 
-function findClosestSize(h, w, u, c) {
-  // Find available net that minimizes the sum of abs diff (height, width, same unit, same color)
-  let filtered = netSizes.filter(x => x.Unit === u && x.Color === c);
+function findClosestSize(h_cm, w_cm, c) {
+  // Find available net in cm, same color, minimize abs diff (height+width)
+  let filtered = netSizes.filter(x => x.Color === c && x.Unit === "Cm");
   if (filtered.length === 0) return null;
-  let best = filtered[0], bestDist = Math.abs(filtered[0]['Height(H)'] - h) + Math.abs(filtered[0]['Width(W)'] - w);
+  let best = filtered[0],
+      bestDist = Math.abs(filtered[0]['Height(H)'] - h_cm) + Math.abs(filtered[0]['Width(W)'] - w_cm);
   for (let item of filtered) {
-    let dist = Math.abs(item['Height(H)'] - h) + Math.abs(item['Width(W)'] - w);
+    let dist = Math.abs(item['Height(H)'] - h_cm) + Math.abs(item['Width(W)'] - w_cm);
     if (dist < bestDist) { best = item; bestDist = dist; }
   }
   return best;
