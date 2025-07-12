@@ -15,7 +15,10 @@
       <button onclick="login()">Login</button>
     </div>
     <form id="order-section" style="display:none;" onsubmit="event.preventDefault();">
-      <div id="main-title"><h2>ArmorX Retail Shop</h2></div>
+      <div id="main-title"><h2>ArmorX Retail Shop</h2>
+  <button type="button" id="logout-btn" onclick="logout()" style="float:right;margin-right:6px;font-size:0.98em;padding:7px 16px 7px 16px;background:#ffeaea;color:#b20000;border-radius:6px;border:none;box-shadow:0 1px 3px #b2000022;cursor:pointer;">Logout</button>
+</div>
+
       <h3>Add Window Nets</h3>
       <div id="windows-list"></div>
       <button type="button" class="add-btn" onclick="addWindowEntry()">+ Add Window</button>
