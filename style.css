@@ -128,3 +128,31 @@ button:hover { background: var(--primary-dark); }
   .container { max-width: 100vw; border-radius: 0; margin-top: 0; }
   .brand-logo { width: 90vw; max-width: 170px; }
 }
+#main-title, #app-title {
+  width: 100%;
+  text-align: center;
+}
+#main-title h2, #app-title h2 {
+  color: var(--accent);
+  margin-top: 0;
+  margin-bottom: 8px;
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+.deal-break {
+  font-size: 0.97em;
+  color: #333;
+  font-weight: 400;
+  margin-left: 1px;
+}
+.per-unit {
+  color: #1e4c23;
+  font-size: 0.99em;
+  margin-right: 10px;
+}
+#cust-address {
+  margin-bottom: 16px;
+  margin-top: -5px;
+  background: #ffffe7;
+  border-color: #c1ff72;
+}
