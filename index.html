@@ -86,6 +86,9 @@
             font-weight: bold;
             color: #28a745;
         }
+        #results {
+            margin-top: 10px;
+        }
     </style>
 </head>
 <body>
@@ -94,110 +97,226 @@
             <h2>Login</h2>
             <input type="tel" id="phone" placeholder="Enter 10-digit phone number" maxlength="10" pattern="[0-9]{10}" required>
             <button onclick="login()">Login</button>
-       </div>
+        </div>
         <div id="sizeList" class="order-box">
-            <h2>Select Window Sizes</h2>
-            <select id="sizeSelect" onchange="updatePrice()">
-                <option value="">Select Size</option>
+            <h2>Window Order</h2>
+            <input type="number" id="height" placeholder="Height" step="0.1" required>
+            <input type="number" id="width" placeholder="Width" step="0.1" required>
+            <select id="unit" onchange="convertUnits()">
+                <option value="cm">Cm</option>
+                <option value="inch">Inch</option>
+                <option value="feet">Feet</option>
             </select>
             <input type="number" id="quantity" placeholder="Quantity" min="1" value="1" onchange="updatePrice()">
+            <select id="color">
+                <option value="BK">Black (BK)</option>
+                <option value="CR">Cream (CR)</option>
+                <option value="GR">Grey (GR)</option>
+                <option value="WH">White (WH)</option>
+            </select>
+            <button onclick="findClosestSize()">Find Closest Size</button>
+            <div id="results"></div>
             <p>Price: <span id="price"></span> ₹</p>
             <p>Total: <span id="total"></span> ₹</p>
             <button onclick="addToOrder()">Add to Order</button>
             <h3>Order Summary</h3>
             <ul id="orderSummary"></ul>
             <button onclick="sendOrder()">Send via WhatsApp</button>
+            <button onclick="resetForm()">Add Another Window</button>
         </div>
     </div>
 
     <script>
-        let sizes = [];
-        let order = [];
-
-        // Load sizes from JSON (simulated from your document)
-        sizes = [
-            { "Size(HxW)": "50x50", "Unit": "Cm", "Color": "BK", "Selling Price": 323 },
-            { "Size(HxW)": "50x50", "Unit": "Cm", "Color": "CR", "Selling Price": 323 },
-            { "Size(HxW)": "50x55", "Unit": "Cm", "Color": "BK", "Selling Price": 323 },
-            // Add more sizes as needed from your JSON
-        ];
-
-        function login() {
-            let phone = document.getElementById('phone').value;
-            if (phone.length === 10 && /^\d+$/.test(phone)) {
-                document.getElementById('loginBox').style.display = 'none';
-                document.getElementById('sizeList').style.display = 'block';
-                populateSizes();
-            } else {
-                alert('Please enter a valid 10-digit phone number');
-            }
-        }
-
-        function populateSizes() {
-            let select = document.getElementById('sizeSelect');
-            sizes.forEach(size => {
-                let option = document.createElement('option');
-                option.value = JSON.stringify(size);
-                option.text = `${size['Size(HxW)']} (${size['Unit']}) - ${size['Color']}`;
-                select.appendChild(option);
-            });
-        }
-
-        function updatePrice() {
-            let select = document.getElementById('sizeSelect');
-            let quantity = document.getElementById('quantity').value;
-            if (select.value) {
-                let size = JSON.parse(select.value);
-                let price = size['Selling Price'] * quantity;
-                document.getElementById('price').textContent = size['Selling Price'];
-                document.getElementById('total').textContent = price;
-            }
-        }
-
-        function addToOrder() {
-            let select = document.getElementById('sizeSelect');
-            let quantity = document.getElementById('quantity').value;
-            if (select.value && quantity > 0) {
-                let size = JSON.parse(select.value);
-                let item = { ...size, quantity: parseInt(quantity) };
-                order.push(item);
-                updateOrderSummary();
-                select.value = '';
-                document.getElementById('quantity').value = 1;
-                document.getElementById('price').textContent = '';
-                document.getElementById('total').textContent = '';
-            }
-        }
-
-        function updateOrderSummary() {
-            let summary = document.getElementById('orderSummary');
-            summary.innerHTML = '';
-            let totalCost = 0;
-            order.forEach(item => {
-                let li = document.createElement('li');
-                li.textContent = `${item['Size(HxW)']} (${item['Unit']}) - ${item['Color']} x ${item.quantity} = ${item['Selling Price'] * item.quantity} ₹`;
-                summary.appendChild(li);
-                totalCost += item['Selling Price'] * item.quantity;
-            });
-            let liTotal = document.createElement('li');
-            liTotal.textContent = `Total Invoice: ${totalCost} ₹`;
-            summary.appendChild(liTotal);
-        }
-
-        function sendOrder() {
-            if (order.length > 0) {
-                let phone = document.getElementById('phone').value;
-                let message = `Order from Distributor (Phone: +91-${phone}):\n\n`;
-                order.forEach(item => {
-                    message += `${item['Size(HxW)']} (${item['Unit']}) - ${item['Color']} x ${item.quantity} = ${item['Selling Price'] * item.quantity} ₹\n`;
-                });
-                message += `\nTotal Invoice: ${order.reduce((sum, item) => sum + item['Selling Price'] * item.quantity, 0)} ₹`;
-                let whatsappURL = `https://wa.me/917304692553?text=${encodeURIComponent(message)}`;
-                window.open(whatsappURL, '_blank');
-            } else {
-                alert('Please add items to your order first');
-            }
-        }
-    </script>
-</body>
-</html>
+        let sizes = [
+            {"Height(H)": 50, "Width(W)": 50.0, "Size(HxW)": "50x50", "Unit": "Cm", "Color": "BK", "Amazon Link": "https://www.amazon.in/dp/B0D1R8PYHT/", "Selling Price": 323, "Deal Price": 299, "Event Price": 284},
+            {"Height(H)": 50, "Width(W)": 50.0, "Size(HxW)": "50x50", "Unit": "Cm", "Color": "CR", "Amazon Link": "https://www.amazon.in/dp/B0D1R932M8/", "Selling Price": 323, "Deal Price": 299, "Event Price": 284},
+            {"Height(H)": 50, "Width(W)": 50.0, "Size(HxW)": "50x50", "Unit": "Cm", "Color": "GR", "Amazon Link": "https://www.amazon.in/dp/B0D1KPDSNM/", "Selling Price": 323, "Deal Price": 299, "Event Price": 284},
+            {"Height(H)": 50, "Width(W)": 50.0, "Size(HxW)": "50x50", "Unit": "Cm", "Color": "WH", "Amazon Link": "https://www.amazon.in/dp/B0D1KQY1H7/", "Selling Price": 323, "Deal Price": 299, "Event Price": 284},
+            {"Height(H)": 50, "Width(W)": 55.0, "Size(HxW)": "50x55", "Unit": "Cm", "Color": "BK", "Amazon Link": "https://www.amazon.in/dp/B0D1KQ4GD8/", "Selling Price": 323, "Deal Price": 299, "Event Price": 284},
+            {"Height(H)": 50, "Width(W)": 55.0, "Size(HxW)": "50x55", "Unit": "Cm", "Color": "CR", "Amazon Link": "https://www.amazon.in/dp/B0D1KR68Q6/", "Selling Price": 323, "Deal Price": 299, "Event Price": 284},
+            {"Height(H)": 50, "Width(W)": 55.0, "Size(HxW)": "50x55", "Unit": "Cm", "Color": "GR", "Amazon Link": "https://www.amazon.in/dp/B0D1KPB4LP/", "Selling Price": 323, "Deal Price": 299, "Event Price": 284},
+            {"Height(H)": 50, "Width(W)": 55.0, "Size(HxW)": "50x55", "Unit": "Cm", "Color": "WH", "Amazon Link": "https://www.amazon.in/dp/B0D1KR9NMC/", "Selling Price": 323, "Deal Price": 299, "Event Price": 284},
+            {"Height(H)": 50, "Width(W)": 60.0, "Size(HxW)": "50x60", "Unit": "Cm", "Color": "BK", "Amazon Link": "https://www.amazon.in/dp/B0D1KPDXBK/", "Selling Price": 323, "Deal Price": 299, "Event Price": 284},
+            {"Height(H)": 50, "Width(W)": 60.0, "Size(HxW)": "50x60", "Unit": "Cm", "Color": "CR", "Amazon Link": "https://www.amazon.in/dp/B0D1KPMHD4/", "Selling Price": 323, "Deal Price": 299, "Event Price": 284},
+            {"Height(H)": 50, "Width(W)": 60.0, "Size(HxW)": "50x60", "Unit": "Cm", "Color": "GR", "Amazon Link": "https://www.amazon.in/dp/B0D1KQLJW6/", "Selling Price": 323, "Deal Price": 299, "Event Price": 284},
+            {"Height(H)": 50, "Width(W)": 60.0, "Size(HxW)": "50x60", "Unit": "Cm", "Color": "WH", "Amazon Link": "https://www.amazon.in/dp/B0D1KRZ2HW/", "Selling Price": 323, "Deal Price": 299, "Event Price": 284},
+            {"Height(H)": 55, "Width(W)": 55.0, "Size(HxW)": "55x55", "Unit": "Cm", "Color": "BK", "Amazon Link": "https://www.amazon.in/dp/B0D1KPWJSN/", "Selling Price": 323, "Deal Price": 299, "Event Price": 284},
+            {"Height(H)": 55, "Width(W)": 55.0, "Size(HxW)": "55x55", "Unit": "Cm", "Color": "CR", "Amazon Link": "https://www.amazon.in/dp/B0D1KKRPQX/", "Selling Price": 323, "Deal Price": 299, "Event Price": 284},
+            {"Height(H)": 55, "Width(W)": 55.0, "Size(HxW)": "55x55", "Unit": "Cm", "Color": "GR", "Amazon Link": "https://www.amazon.in/dp/B0D1KR81KY/", "Selling Price": 323, "Deal Price": 299, "Event Price": 284},
+            {"Height(H)": 55, "Width(W)": 55.0, "Size(HxW)": "55x55", "Unit": "Cm", "Color": "WH", "Amazon Link": "https://www.amazon.in/dp/B0D1KQTLJK/", "Selling Price": 323, "Deal Price": 299, "Event Price": 284},
+            {"Height(H)": 50, "Width(W)": 65.0, "Size(HxW)": "50x65", "Unit": "Cm", "Color": "BK", "Amazon Link": "https://www.amazon.in/dp/B0D1KPQ2MZ/", "Selling Price": 323, "Deal Price": 299, "Event Price": 284},
+            {"Height(H)": 50, "Width(W)": 65.0, "Size(HxW)": "50x65", "Unit": "Cm", "Color": "CR", "Amazon Link": "https://www.amazon.in/dp/B0D1KR3GCQ/", "Selling Price": 323, "Deal Price": 299, "Event Price": 284},
+            {"Height(H)": 50, "Width(W)": 65.0, "Size(HxW)": "50x65", "Unit": "Cm", "Color": "GR", "Amazon Link": "https://www.amazon.in/dp/B0D1KNY5LZ/", "Selling Price": 323, "Deal Price": 299, "Event Price": 284},
+            {"Height(H)": 50, "Width(W)": 65.0, "Size(HxW)": "50x65", "Unit": "Cm", "Color": "WH", "Amazon Link": "https://www.amazon.in/dp/B0D1KP3ND9/", "Selling Price": 323, "Deal Price": 299, "Event Price": 284},
+            {"Height(H)": 55, "Width(W)": 60.0, "Size(HxW)": "55x60", "Unit": "Cm", "Color": "BK", "Amazon Link": "https://www.amazon.in/dp/B0D1KNNW8Y/", "Selling Price": 323, "Deal Price": 299, "Event Price": 284},
+            {"Height(H)": 55, "Width(W)": 60.0, "Size(HxW)": "55x60", "Unit": "Cm", "Color": "CR", "Amazon Link": "https://www.amazon.in/dp/B0D1KRTYPM/", "Selling Price": 323, "Deal Price": 299, "Event Price": 284},
+            {"Height(H)": 55, "Width(W)": 60.0, "Size(HxW)": "55x60", "Unit": "Cm", "Color": "GR", "Amazon Link": "https://www.amazon.in/dp/B0D1KQZ3JG/", "Selling Price": 323, "Deal Price": 299, "Event Price": 284},
+            {"Height(H)": 55, "Width(W)": 60.0, "Size(HxW)": "55x60", "Unit": "Cm", "Color": "WH", "Amazon Link": "https://www.amazon.in/dp/B0D1KPYZK1/", "Selling Price": 323, "Deal Price": 299, "Event Price": 284},
+            {"Height(H)": 50, "Width(W)": 70.0, "Size(HxW)": "50x70", "Unit": "Cm", "Color": "BK", "Amazon Link": "https://www.amazon.in/dp/B0D1KNTHG3/", "Selling Price": 323, "Deal Price": 299, "Event Price": 284},
+            {"Height(H)": 50, "Width(W)": 70.0, "Size(HxW)": "50x70", "Unit": "Cm", "Color": "CR", "Amazon Link": "https://www.amazon.in/dp/B0D1KQ4Z65/", "Selling Price": 323, "Deal Price": 299, "Event Price": 284},
+            {"Height(H)": 50, "Width(W)": 70.0, "Size(HxW)": "50x70", "Unit": "Cm", "Color": "GR", "Amazon Link": "https://www.amazon.in/dp/B0D1RBH552/", "Selling Price": 323, "Deal Price": 299, "Event Price": 284},
+            {"Height(H)": 50, "Width(W)": 70.0, "Size(HxW)": "50x70", "Unit": "Cm", "Color": "WH", "Amazon Link": "https://www.amazon.in/dp/B0D1R8BGNR/", "Selling Price": 323, "Deal Price": 299, "Event Price": 284},
+            {"Height(H)": 55, "Width(W)": 65.0, "Size(HxW)": "55x65", "Unit": "Cm", "Color": "BK", "Amazon Link": "https://www.amazon.in/dp/B0D1KQK7MJ/", "Selling Price": 323, "Deal Price": 299, "Event Price": 284},
+            {"Height(H)": 55, "Width(W)": 65.0, "Size(HxW)": "55x65", "Unit": "Cm", "Color": "CR", "Amazon Link": "https://www.amazon.in/dp/B0D1KRTYPL/", "Selling Price": 323, "Deal Price": 299, "Event Price": 284},
+            {"Height(H)": 55, "Width(W)": 65.0, "Size(HxW)": "55x65", "Unit": "Cm", "Color": "GR", "Amazon Link": "https://www.amazon.in/dp/B0D1KS2MVH/", "Selling Price": 323, "Deal Price": 299, "Event Price": 284},
+            {"Height(H)": 55, "Width(W)": 65.0, "Size(HxW)": "55x65", "Unit": "Cm", "Color": "WH", "Amazon Link": "https://www.amazon.in/dp/B0D1KP7BZ5/", "Selling Price": 323, "Deal Price": 299, "Event Price": 284},
+            {"Height(H)": 60, "Width(W)": 60.0, "Size(HxW)": "60x60", "Unit": "Cm", "Color": "BK", "Amazon Link": "https://www.amazon.in/dp/B0D1KPVZRV/", "Selling Price": 323, "Deal Price": 299, "Event Price": 284},
+            {"Height(H)": 60, "Width(W)": 60.0, "Size(HxW)": "60x60", "Unit": "Cm", "Color": "CR", "Amazon Link": "https://www.amazon.in/dp/B0D1KPPCVG/", "Selling Price": 323, "Deal Price": 299, "Event Price": 284},
+            {"Height(H)": 60, "Width(W)": 60.0, "Size(HxW)": "60x60", "Unit": "Cm", "Color": "GR", "Amazon Link": "https://www.amazon.in/dp/B0D1KS1W87/", "Selling Price": 323, "Deal Price": 299, "Event Price": 284},
+            {"Height(H)": 60, "Width(W)": 60.0, "Size(HxW)": "60x60", "Unit": "Cm", "Color": "WH", "Amazon Link": "https://www.amazon.in/dp/B0D1KR3GQ5/", "Selling Price": 323, "Deal Price": 299, "Event Price": 284},
+            {"Height(H)": 2, "Width(W)": 2.0, "Size(HxW)": "2x2", "Unit": "Feet", "Color": "BK", "Amazon Link": "https://www.amazon.in/dp/B09NJYZJT5/", "Selling Price": 323, "Deal Price": 299, "Event Price": 284},
+            {"Height(H)": 2, "Width(W)": 2.0, "Size(HxW)": "2x2", "Unit": "Feet", "Color": "CR", "Amazon Link": "https://www.amazon.in/dp/B09NLSC1Z4/", "Selling Price": 323, "Deal Price": 299, "Event Price": 284},
+            {"Height(H)": 2, "Width(W)": 2.0, "Size(HxW)": "2x2", "Unit": "Feet", "Color": "GR", "Amazon Link": "https://www.amazon.in/dp/B09NLT8GGX/", "Selling Price": 323, "Deal Price": 299, "Event Price": 284},
+            {"Height(H)": 2, "Width(W)": 2.0, "Size(HxW)": "2x2", "Unit": "Feet", "Color": "WH", "Amazon Link": "https://www.amazon.in/dp/B09P7P1JK8/", "Selling Price": 323, "Deal Price": 299, "Event Price": 284},
+            {"Height(H)": 50, "Width(W)": 75.0, "Size(HxW)": "50x75", "Unit": "Cm", "Color": "BK", "Amazon Link": "https://www.amazon.in/dp/B0D1KRDKVM/", "Selling Price": 340, "Deal Price": 315, "Event Price": 299},
+            {"Height(H)": 50, "Width(W)": 75.0, "Size(HxW)": "50x75", "Unit": "Cm", "Color": "CR", "Amazon Link": "https://www.amazon.in/dp/B0D1KRJMTH/", "Selling Price": 340, "Deal Price": 315, "Event Price": 299},
+            {"Height(H)": 50, "Width(W)": 75.0, "Size(HxW)": "50x75", "Unit": "Cm", "Color": "GR", "Amazon Link": "https://www.amazon.in/dp/B0D1KR5HVD/", "Selling Price": 340, "Deal Price": 315, "Event Price": 299},
+            {"Height(H)": 50, "Width(W)": 75.0, "Size(HxW)": "50x75", "Unit": "Cm", "Color": "WH", "Amazon Link": "https://www.amazon.in/dp/B0D1KQWBLC/", "Selling Price": 340, "Deal Price": 315, "Event Price": 299},
+            {"Height(H)": 55, "Width(W)": 70.0, "Size(HxW)": "55x70", "Unit": "Cm", "Color": "BK", "Amazon Link": "https://www.amazon.in/dp/B0D1KRJ4PK/", "Selling Price": 340, "Deal Price": 315, "Event Price": 299},
+            {"Height(H)": 55, "Width(W)": 70.0, "Size(HxW)": "55x70", "Unit": "Cm", "Color": "CR", "Amazon Link": "https://www.amazon.in/dp/B0D1KRKLQ4/", "Selling Price": 340, "Deal Price": 315, "Event Price": 299},
+            {"Height(H)": 55, "Width(W)": 70.0, "Size(HxW)": "55x70", "Unit": "Cm", "Color": "GR", "Amazon Link": "https://www.amazon.in/dp/B0D1R9M456/", "Selling Price": 340, "Deal Price": 315, "Event Price": 299},
+            {"Height(H)": 55, "Width(W)": 70.0, "Size(HxW)": "55x70", "Unit": "Cm", "Color": "WH", "Amazon Link": "https://www.amazon.in/dp/B0D1KQQL6T/", "Selling Price": 340, "Deal Price": 315, "Event Price": 299},
+            {"Height(H)": 60, "Width(W)": 65.0, "Size(HxW)": "60x65", "Unit": "Cm", "Color": "BK", "Amazon Link": "https://www.amazon.in/dp/B0D1KSGQVQ/", "Selling Price": 340, "Deal Price": 315, "Event Price": 299},
+            {"Height(H)": 60, "Width(W)": 65.0, "Size(HxW)": "60x65", "Unit": "Cm", "Color": "CR", "Amazon Link": "https://www.amazon.in/dp/B0D1KPWMQ4/", "Selling Price": 340, "Deal Price": 315, "Event Price": 299},
+            {"Height(H)": 60, "Width(W)": 65.0, "Size(HxW)": "60x65", "Unit": "Cm", "Color": "GR", "Amazon Link": "https://www.amazon.in/dp/B0D1KPW28F/", "Selling Price": 340, "Deal Price": 315, "Event Price": 299},
+            {"Height(H)": 60, "Width(W)": 65.0, "Size(HxW)": "60x65", "Unit": "Cm", "Color": "WH", "Amazon Link": "https://www.amazon.in/dp/B0D1KRNZN5/", "Selling Price": 340, "Deal Price": 315, "Event Price": 299},
+            {"Height(H)": 50, "Width(W)": 80.0, "Size(HxW)": "50x80", "Unit": "Cm", "Color": "BK", "Amazon Link": "https://www.amazon.in/dp/B0D1R9CQGV/", "Selling Price": 340, "Deal Price": 315, "Event Price": 299},
+            {"Height(H)": 50, "Width(W)": 80.0, "Size(HxW)": "50x80", "Unit": "Cm", "Color": "CR", "Amazon Link": "https://www.amazon.in/dp/B0D1KQ61PC/", "Selling Price": 340, "Deal Price": 315, "Event Price": 299},
+            {"Height(H)": 50, "Width(W)": 80.0, "Size(HxW)": "50x80", "Unit": "Cm", "Color": "GR", "Amazon Link": "https://www.amazon.in/dp/B0D1KNFFTH/", "Selling Price": 340, "Deal Price": 315, "Event Price": 299},
+            {"Height(H)": 50, "Width(W)": 80.0, "Size(HxW)": "50x80", "Unit": "Cm", "Color": "WH", "Amazon Link": "https://www.amazon.in/dp/B0D1KQ2D98/", "Selling Price": 340, "Deal Price": 315, "Event Price": 299},
+            {"Height(H)": 55, "Width(W)": 75.0, "Size(HxW)": "55x75", "Unit": "Cm", "Color": "BK", "Amazon Link": "https://www.amazon.in/dp/B0D1RBBXL2/", "Selling Price": 340, "Deal Price": 315, "Event Price": 299},
+            {"Height(H)": 55, "Width(W)": 75.0, "Size(HxW)": "55x75", "Unit": "Cm", "Color": "CR", "Amazon Link": "https://www.amazon.in/dp/B0D1KPPLYF/", "Selling Price": 340, "Deal Price": 315, "Event Price": 299},
+            {"Height(H)": 55, "Width(W)": 75.0, "Size(HxW)": "55x75", "Unit": "Cm", "Color": "GR", "Amazon Link": "https://www.amazon.in/dp/B0D1KQMZD1/", "Selling Price": 340, "Deal Price": 315, "Event Price": 299},
+            {"Height(H)": 55, "Width(W)": 75.0, "Size(HxW)": "55x75", "Unit": "Cm", "Color": "WH", "Amazon Link": "https://www.amazon.in/dp/B0D1RBF8NZ/", "Selling Price": 340, "Deal Price": 315, "Event Price": 299},
+            {"Height(H)": 60, "Width(W)": 70.0, "Size(HxW)": "60x70", "Unit": "Cm", "Color": "BK", "Amazon Link": "https://www.amazon.in/dp/B0D1KQRMCB/", "Selling Price": 340, "Deal Price": 315, "Event Price": 299},
+            {"Height(H)": 60, "Width(W)": 70.0, "Size(HxW)": "60x70", "Unit": "Cm", "Color": "CR", "Amazon Link": "https://www.amazon.in/dp/B0D1KPND7V/", "Selling Price": 340, "Deal Price": 315, "Event Price": 299},
+            {"Height(H)": 60, "Width(W)": 70.0, "Size(HxW)": "60x70", "Unit": "Cm", "Color": "GR", "Amazon Link": "https://www.amazon.in/dp/B0DKJ3LZTN/", "Selling Price": 340, "Deal Price": 315, "Event Price": 299},
+            {"Height(H)": 60, "Width(W)": 70.0, "Size(HxW)": "60x70", "Unit": "Cm", "Color": "WH", "Amazon Link": "https://www.amazon.in/dp/B0D1KRS33X/", "Selling Price": 340, "Deal Price": 315, "Event Price": 299},
+            {"Height(H)": 65, "Width(W)": 65.0, "Size(HxW)": "65x65", "Unit": "Cm", "Color": "BK", "Amazon Link": "https://www.amazon.in/dp/B0D1KRSBP2/", "Selling Price": 340, "Deal Price": 315, "Event Price": 299},
+            {"Height(H)": 65, "Width(W)": 65.0, "Size(HxW)": "65x65", "Unit": "Cm", "Color": "CR", "Amazon Link": "https://www.amazon.in/dp/B0D1KQCJD2/", "Selling Price": 340, "Deal Price": 315, "Event Price": 299},
+            {"Height(H)": 65, "Width(W)": 65.0, "Size(HxW)": "65x65", "Unit": "Cm", "Color": "GR", "Amazon Link": "https://www.amazon.in/dp/B0D1R8MXJT/", "Selling Price": 340, "Deal Price": 315, "Event Price": 299},
+            {"Height(H)": 65, "Width(W)": 65.0, "Size(HxW)": "65x65", "Unit": "Cm", "Color": "WH", "Amazon Link": "https://www.amazon.in/dp/B0D1KRQ4YK/", "Selling Price": 340, "Deal Price": 315, "Event Price": 299},
+            {"Height(H)": 50, "Width(W)": 85.0, "Size(HxW)": "50x85", "Unit": "Cm", "Color": "BK", "Amazon Link": "https://www.amazon.in/dp/B0D1RDHSY8/", "Selling Price": 340, "Deal Price": 315, "Event Price": 299},
+            {"Height(H)": 50, "Width(W)": 85.0, "Size(HxW)": "50x85", "Unit": "Cm", "Color": "CR", "Amazon Link": "https://www.amazon.in/dp/B0D1KNJRDN/", "Selling Price": 340, "Deal Price": 315, "Event Price": 299},
+            {"Height(H)": 50, "Width(W)": 85.0, "Size(HxW)": "50x85", "Unit": "Cm", "Color": "GR", "Amazon Link": "https://www.amazon.in/dp/B0D1KRNW6X/", "Selling Price": 340, "Deal Price": 315, "Event Price": 299},
+            {"Height(H)": 50, "Width(W)": 85.0, "Size(HxW)": "50x85", "Unit": "Cm", "Color": "WH", "Amazon Link": "https://www.amazon.in/dp/B0D1KQ666W/", "Selling Price": 340, "Deal Price": 315, "Event Price": 299},
+            {"Height(H)": 55, "Width(W)": 80.0, "Size(HxW)": "55x80", "Unit": "Cm", "Color": "BK", "Amazon Link": "https://www.amazon.in/dp/B0D1R9YNP3/", "Selling Price": 340, "Deal Price": 315, "Event Price": 299},
+            {"Height(H)": 55, "Width(W)": 80.0, "Size(HxW)": "55x80", "Unit": "Cm", "Color": "CR", "Amazon Link": "https://www.amazon.in/dp/B0D1KNLK8R/", "Selling Price": 340, "Deal Price": 315, "Event Price": 299},
+            {"Height(H)": 55, "Width(W)": 80.0, "Size(HxW)": "55x80", "Unit": "Cm", "Color": "GR", "Amazon Link": "https://www.amazon.in/dp/B0D1KQ8F4Y/", "Selling Price": 340, "Deal Price": 315, "Event Price": 299},
+            {"Height(H)": 55, "Width(W)": 80.0, "Size(HxW)": "55x80", "Unit": "Cm", "Color": "WH", "Amazon Link": "https://www.amazon.in/dp/B0D1KQCDTT/", "Selling Price": 340, "Deal Price": 315, "Event Price": 299},
+            {"Height(H)": 50, "Width(W)": 90.0, "Size(HxW)": "50x90", "Unit": "Cm", "Color": "BK", "Amazon Link": "https://www.amazon.in/dp/B0D1KMZS77/", "Selling Price": 340, "Deal Price": 315, "Event Price": 299},
+            {"Height(H)": 50, "Width(W)": 90.0, "Size(HxW)": "50x90", "Unit": "Cm", "Color": "CR", "Amazon Link": "https://www.amazon.in/dp/B0D1KQF416/", "Selling Price": 340, "Deal Price": 315, "Event Price": 299},
+            {"Height(H)": 50, "Width(W)": 90.0, "Size(HxW)": "50x90", "Unit": "Cm", "Color": "GR", "Amazon Link": "https://www.amazon.in/dp/B0D1KQKXNZ/", "Selling Price": 340, "Deal Price": 315, "Event Price": 299},
+            {"Height(H)": 50, "Width(W)": 90.0, "Size(HxW)": "50x90", "Unit": "Cm", "Color": "WH", "Amazon Link": "https://www.amazon.in/dp/B0D1RB23Z9/", "Selling Price": 340, "Deal Price": 315, "Event Price": 299},
+            {"Height(H)": 60, "Width(W)": 75.0, "Size(HxW)": "60x75", "Unit": "Cm", "Color": "BK", "Amazon Link": "https://www.amazon.in/dp/B0D1KR2Q8G/", "Selling Price": 340, "Deal Price": 315, "Event Price": 299},
+            {"Height(H)": 60, "Width(W)": 75.0, "Size(HxW)": "60x75", "Unit": "Cm", "Color": "CR", "Amazon Link": "https://www.amazon.in/dp/B0D1KR5C94/", "Selling Price": 340, "Deal Price": 315, "Event Price": 299},
+            {"Height(H)": 60, "Width(W)": 75.0, "Size(HxW)": "60x75", "Unit": "Cm", "Color": "GR", "Amazon Link": "https://www.amazon.in/dp/B0D1KQ3NCG/", "Selling Price": 340, "Deal Price": 315, "Event Price": 299},
+            {"Height(H)": 60, "Width(W)": 75.0, "Size(HxW)": "60x75", "Unit": "Cm", "Color": "WH", "Amazon Link": "https://www.amazon.in/dp/B0D1KP6J63/", "Selling Price": 340, "Deal Price": 315, "Event Price": 299},
+            {"Height(H)": 65, "Width(W)": 70.0, "Size(HxW)": "65x70", "Unit": "Cm", "Color": "BK", "Amazon Link": "https://www.amazon.in/dp/B0D1KQYS7W/", "Selling Price": 340, "Deal Price": 315, "Event Price": 299},
+            {"Height(H)": 65, "Width(W)": 70.0, "Size(HxW)": "65x70", "Unit": "Cm", "Color": "CR", "Amazon Link": "https://www.amazon.in/dp/B0D1KR5C9C/", "Selling Price": 340, "Deal Price": 315, "Event Price": 299},
+            {"Height(H)": 65, "Width(W)": 70.0, "Size(HxW)": "65x70", "Unit": "Cm", "Color": "GR", "Amazon Link": "https://www.amazon.in/dp/B0D1RB3WZM/", "Selling Price": 340, "Deal Price": 315, "Event Price": 299},
+            {"Height(H)": 65, "Width(W)": 70.0, "Size(HxW)": "65x70", "Unit": "Cm", "Color": "WH", "Amazon Link": "https://www.amazon.in/dp/B0D1KPWMQ3/", "Selling Price": 340, "Deal Price": 315, "Event Price": 299},
+            {"Height(H)": 55, "Width(W)": 85.0, "Size(HxW)": "55x85", "Unit": "Cm", "Color": "BK", "Amazon Link": "https://www.amazon.in/dp/B0D1KNMLQZ/", "Selling Price": 355, "Deal Price": 329, "Event Price": 313},
+            {"Height(H)": 55, "Width(W)": 85.0, "Size(HxW)": "55x85", "Unit": "Cm", "Color": "CR", "Amazon Link": "https://www.amazon.in/dp/B0D1KR8JL5/", "Selling Price": 355, "Deal Price": 329, "Event Price": 313},
+            {"Height(H)": 55, "Width(W)": 85.0, "Size(HxW)": "55x85", "Unit": "Cm", "Color": "GR", "Amazon Link": "https://www.amazon.in/dp/B0D1KRCBV7/", "Selling Price": 355, "Deal Price": 329, "Event Price": 313},
+            {"Height(H)": 55, "Width(W)": 85.0, "Size(HxW)": "55x85", "Unit": "Cm", "Color": "WH", "Amazon Link": "https://www.amazon.in/dp/B0D1KQY339/", "Selling Price": 355, "Deal Price": 329, "Event Price": 313},
+            {"Height(H)": 50, "Width(W)": 95.0, "Size(HxW)": "50x95", "Unit": "Cm", "Color": "BK", "Amazon Link": "https://www.amazon.in/dp/B0D1KR2XGC/", "Selling Price": 355, "Deal Price": 329, "Event Price": 313},
+            {"Height(H)": 50, "Width(W)": 95.0, "Size(HxW)": "50x95", "Unit": "Cm", "Color": "CR", "Amazon Link": "https://www.amazon.in/dp/B0D1KQRYNV/", "Selling Price": 355, "Deal Price": 329, "Event Price": 313},
+            {"Height(H)": 50, "Width(W)": 95.0, "Size(HxW)": "50x95", "Unit": "Cm", "Color": "GR", "Amazon Link": "https://www.amazon.in/dp/B0D1KQZFD4/", "Selling Price": 355, "Deal Price": 329, "Event Price": 313},
+            {"Height(H)": 50, "Width(W)": 95.0, "Size(HxW)": "50x95", "Unit": "Cm", "Color": "WH", "Amazon Link": "https://www.amazon.in/dp/B0D1KQJL3C/", "Selling Price": 355, "Deal Price": 329, "Event Price": 313},
+            {"Height(H)": 60, "Width(W)": 80.0, "Size(HxW)": "60x80", "Unit": "Cm", "Color": "BK", "Amazon Link": "https://www.amazon.in/dp/B0D1KRCPV1/", "Selling Price": 355, "Deal Price": 329, "Event Price": 313},
+            {"Height(H)": 60, "Width(W)": 80.0, "Size(HxW)": "60x80", "Unit": "Cm", "Color": "CR", "Amazon Link": "https://www.amazon.in/dp/B0D1KP7JVK/", "Selling Price": 355, "Deal Price": 329, "Event Price": 313},
+            {"Height(H)": 60, "Width(W)": 80.0, "Size(HxW)": "60x80", "Unit": "Cm", "Color": "GR", "Amazon Link": "https://www.amazon.in/dp/B0D1KQD2YZ/", "Selling Price": 355, "Deal Price": 329, "Event Price": 313},
+            {"Height(H)": 60, "Width(W)": 80.0, "Size(HxW)": "60x80", "Unit": "Cm", "Color": "WH", "Amazon Link": "https://www.amazon.in/dp/B0D1KNXLK4/", "Selling Price": 355, "Deal Price": 329, "Event Price": 313},
+            {"Height(H)": 65, "Width(W)": 75.0, "Size(HxW)": "65x75", "Unit": "Cm", "Color": "BK", "Amazon Link": "https://www.amazon.in/dp/B0D1RDB8RR/", "Selling Price": 355, "Deal Price": 329, "Event Price": 313},
+            {"Height(H)": 65, "Width(W)": 75.0, "Size(HxW)": "65x75", "Unit": "Cm", "Color": "CR", "Amazon Link": "https://www.amazon.in/dp/B0D1KQT9V6/", "Selling Price": 355, "Deal Price": 329, "Event Price": 313},
+            {"Height(H)": 65, "Width(W)": 75.0, "Size(HxW)": "65x75", "Unit": "Cm", "Color": "GR", "Amazon Link": "https://www.amazon.in/dp/B0D1R9T1Z4/", "Selling Price": 355, "Deal Price": 329, "Event Price": 313},
+            {"Height(H)": 65, "Width(W)": 75.0, "Size(HxW)": "65x75", "Unit": "Cm", "Color": "WH", "Amazon Link": "https://www.amazon.in/dp/B0D1KR2XG6/", "Selling Price": 355, "Deal Price": 329, "Event Price": 313},
+            {"Height(H)": 70, "Width(W)": 70.0, "Size(HxW)": "70x70", "Unit": "Cm", "Color": "BK", "Amazon Link": "https://www.amazon.in/dp/B0D1R8PX4Q/", "Selling Price": 355, "Deal Price": 329, "Event Price": 313},
+            {"Height(H)": 70, "Width(W)": 70.0, "Size(HxW)": "70x70", "Unit": "Cm", "Color": "CR", "Amazon Link": "https://www.amazon.in/dp/B0D1KQ6672/", "Selling Price": 355, "Deal Price": 329, "Event Price": 313},
+            {"Height(H)": 70, "Width(W)": 70.0, "Size(HxW)": "70x70", "Unit": "Cm", "Color": "GR", "Amazon Link": "https://www.amazon.in/dp/B0D1KP7H9G/", "Selling Price": 355, "Deal Price": 329, "Event Price": 313},
+            {"Height(H)": 70, "Width(W)": 70.0, "Size(HxW)": "70x70", "Unit": "Cm", "Color": "WH", "Amazon Link": "https://www.amazon.in/dp/B0D1R8NRNK/", "Selling Price": 355, "Deal Price": 329, "Event Price": 313},
+            {"Height(H)": 55, "Width(W)": 90.0, "Size(HxW)": "55x90", "Unit": "Cm", "Color": "BK", "Amazon Link": "https://www.amazon.in/dp/B0D1KPLD4K/", "Selling Price": 355, "Deal Price": 329, "Event Price": 313},
+            {"Height(H)": 55, "Width(W)": 90.0, "Size(HxW)": "55x90", "Unit": "Cm", "Color": "CR", "Amazon Link": "https://www.amazon.in/dp/B0D1KPNBSX/", "Selling Price": 355, "Deal Price": 329, "Event Price": 313},
+            {"Height(H)": 55, "Width(W)": 90.0, "Size(HxW)": "55x90", "Unit": "Cm", "Color": "GR", "Amazon Link": "https://www.amazon.in/dp/B0D1KNPJCD/", "Selling Price": 355, "Deal Price": 329, "Event Price": 313},
+            {"Height(H)": 55, "Width(W)": 90.0, "Size(HxW)": "55x90", "Unit": "Cm", "Color": "WH", "Amazon Link": "https://www.amazon.in/dp/B0D1KP7JVG/", "Selling Price": 355, "Deal Price": 329, "Event Price": 313},
+            {"Height(H)": 50, "Width(W)": 100.0, "Size(HxW)": "50x100", "Unit": "Cm", "Color": "BK", "Amazon Link": "https://www.amazon.in/dp/B0D1KPMKN4/", "Selling Price": 355, "Deal Price": 329, "Event Price": 313},
+            {"Height(H)": 50, "Width(W)": 100.0, "Size(HxW)": "50x100", "Unit": "Cm", "Color": "CR", "Amazon Link": "https://www.amazon.in/dp/B0D1R9ZW4M/", "Selling Price": 355, "Deal Price": 329, "Event Price": 313},
+            {"Height(H)": 50, "Width(W)": 100.0, "Size(HxW)": "50x100", "Unit": "Cm", "Color": "GR", "Amazon Link": "https://www.amazon.in/dp/B0D1KQKHPD/", "Selling Price": 355, "Deal Price": 329, "Event Price": 313},
+            {"Height(H)": 50, "Width(W)": 100.0, "Size(HxW)": "50x100", "Unit": "Cm", "Color": "WH", "Amazon Link": "https://www.amazon.in/dp/B0D1KQJLQH/", "Selling Price": 355, "Deal Price": 329, "Event Price": 313},
+            {"Height(H)": 60, "Width(W)": 85.0, "Size(HxW)": "60x85", "Unit": "Cm", "Color": "BK", "Amazon Link": "https://www.amazon.in/dp/B0D1KQSCQN/", "Selling Price": 355, "Deal Price": 329, "Event Price": 313},
+            {"Height(H)": 60, "Width(W)": 85.0, "Size(HxW)": "60x85", "Unit": "Cm", "Color": "CR", "Amazon Link": "https://www.amazon.in/dp/B0D1KQDRSC/", "Selling Price": 355, "Deal Price": 329, "Event Price": 313},
+            {"Height(H)": 60, "Width(W)": 85.0, "Size(HxW)": "60x85", "Unit": "Cm", "Color": "GR", "Amazon Link": "https://www.amazon.in/dp/B0D1KPB3JW/", "Selling Price": 355, "Deal Price": 329, "Event Price": 313},
+            {"Height(H)": 60, "Width(W)": 85.0, "Size(HxW)": "60x85", "Unit": "Cm", "Color": "WH", "Amazon Link": "https://www.amazon.in/dp/B0D1KR7WMQ/", "Selling Price": 355, "Deal Price": 329, "Event Price": 313},
+            {"Height(H)": 65, "Width(W)": 80.0, "Size(HxW)": "65x80", "Unit": "Cm", "Color": "BK", "Amazon Link": "https://www.amazon.in/dp/B0D1KNW1V2/", "Selling Price": 355, "Deal Price": 329, "Event Price": 313},
+            {"Height(H)": 65, "Width(W)": 80.0, "Size(HxW)": "65x80", "Unit": "Cm", "Color": "CR", "Amazon Link": "https://www.amazon.in/dp/B0D1KRLLX4/", "Selling Price": 355, "Deal Price": 329, "Event Price": 313},
+            {"Height(H)": 65, "Width(W)": 80.0, "Size(HxW)": "65x80", "Unit": "Cm", "Color": "GR", "Amazon Link": "https://www.amazon.in/dp/B0D1KPWF5M/", "Selling Price": 355, "Deal Price": 329, "Event Price": 313},
+            {"Height(H)": 65, "Width(W)": 80.0, "Size(HxW)": "65x80", "Unit": "Cm", "Color": "WH", "Amazon Link": "https://www.amazon.in/dp/B0D1KPSKFB/", "Selling Price": 355, "Deal Price": 329, "Event Price": 313},
+            {"Height(H)": 55, "Width(W)": 95.0, "Size(HxW)": "55x95", "Unit": "Cm", "Color": "BK", "Amazon Link": "https://www.amazon.in/dp/B0D1KPZZ73/", "Selling Price": 355, "Deal Price": 329, "Event Price": 313},
+            {"Height(H)": 55, "Width(W)": 95.0, "Size(HxW)": "55x95", "Unit": "Cm", "Color": "CR", "Amazon Link": "https://www.amazon.in/dp/B0D1KQR4T3/", "Selling Price": 355, "Deal Price": 329, "Event Price": 313},
+            {"Height(H)": 55, "Width(W)": 95.0, "Size(HxW)": "55x95", "Unit": "Cm", "Color": "GR", "Amazon Link": "https://www.amazon.in/dp/B0D1KQ8F4Z/", "Selling Price": 355, "Deal Price": 329, "Event Price": 313},
+            {"Height(H)": 55, "Width(W)": 95.0, "Size(HxW)": "55x95", "Unit": "Cm", "Color": "WH", "Amazon Link": "https://www.amazon.in/dp/B0D1KQ8QMQ/", "Selling Price": 355, "Deal Price": 329, "Event Price": 313},
+            {"Height(H)": 50, "Width(W)": 105.0, "Size(HxW)": "50x105", "Unit": "Cm", "Color": "BK", "Amazon Link": "https://www.amazon.in/dp/B0D1KPSTPW/", "Selling Price": 355, "Deal Price": 329, "Event Price": 313},
+            {"Height(H)": 50, "Width(W)": 105.0, "Size(HxW)": "50x105", "Unit": "Cm", "Color": "CR", "Amazon Link": "https://www.amazon.in/dp/B0D1KRXKRX/", "Selling Price": 355, "Deal Price": 329, "Event Price": 313},
+            {"Height(H)": 50, "Width(W)": 105.0, "Size(HxW)": "50x105", "Unit": "Cm", "Color": "GR", "Amazon Link": "https://www.amazon.in/dp/B0D1KPMKN5/", "Selling Price": 355, "Deal Price": 329, "Event Price": 313},
+            {"Height(H)": 50, "Width(W)": 105.0, "Size(HxW)": "50x105", "Unit": "Cm", "Color": "WH", "Amazon Link": "https://www.amazon.in/dp/B0D1KQJLQH/", "Selling Price": 355, "Deal Price": 329, "Event Price": 313},
+            {"Height(H)": 60, "Width(W)": 90.0, "Size(HxW)": "60x90", "Unit": "Cm", "Color": "BK", "Amazon Link": "https://www.amazon.in/dp/B0D1KRCPV2/", "Selling Price": 355, "Deal Price": 329, "Event Price": 313},
+            {"Height(H)": 60, "Width(W)": 90.0, "Size(HxW)": "60x90", "Unit": "Cm", "Color": "CR", "Amazon Link": "https://www.amazon.in/dp/B0D1KP7JVK/", "Selling Price": 355, "Deal Price": 329, "Event Price": 313},
+            {"Height(H)": 60, "Width(W)": 90.0, "Size(HxW)": "60x90", "Unit": "Cm", "Color": "GR", "Amazon Link": "https://www.amazon.in/dp/B0D1KQD2YZ/", "Selling Price": 355, "Deal Price": 329, "Event Price": 313},
+            {"Height(H)": 60, "Width(W)": 90.0, "Size(HxW)": "60x90", "Unit": "Cm", "Color": "WH", "Amazon Link": "https://www.amazon.in/dp/B0D1KNXLK5/", "Selling Price": 355, "Deal Price": 329, "Event Price": 313},
+            {"Height(H)": 65, "Width(W)": 85.0, "Size(HxW)": "65x85", "Unit": "Cm", "Color": "BK", "Amazon Link": "https://www.amazon.in/dp/B0D1KNW1V3/", "Selling Price": 355, "Deal Price": 329, "Event Price": 313},
+            {"Height(H)": 65, "Width(W)": 85.0, "Size(HxW)": "65x85", "Unit": "Cm", "Color": "CR", "Amazon Link": "https://www.amazon.in/dp/B0D1KRLLX5/", "Selling Price": 355, "Deal Price": 329, "Event Price": 313},
+            {"Height(H)": 65, "Width(W)": 85.0, "Size(HxW)": "65x85", "Unit": "Cm", "Color": "GR", "Amazon Link": "https://www.amazon.in/dp/B0D1KPWF5N/", "Selling Price": 355, "Deal Price": 329, "Event Price": 313},
+            {"Height(H)": 65, "Width(W)": 85.0, "Size(HxW)": "65x85", "Unit": "Cm", "Color": "WH", "Amazon Link": "https://www.amazon.in/dp/B0D1KPSKFC/", "Selling Price": 355, "Deal Price": 329, "Event Price": 313},
+            {"Height(H)": 55, "Width(W)": 100.0, "Size(HxW)": "55x100", "Unit": "Cm", "Color": "BK", "Amazon Link": "https://www.amazon.in/dp/B0D1KPZZ74/", "Selling Price": 355, "Deal Price": 329, "Event Price": 313},
+            {"Height(H)": 55, "Width(W)": 100.0, "Size(HxW)": "55x100", "Unit": "Cm", "Color": "CR", "Amazon Link": "https://www.amazon.in/dp/B0D1KQR4T4/", "Selling Price": 355, "Deal Price": 329, "Event Price": 313},
+            {"Height(H)": 55, "Width(W)": 100.0, "Size(HxW)": "55x100", "Unit": "Cm", "Color": "GR", "Amazon Link": "https://www.amazon.in/dp/B0D1KQ8F4Z/", "Selling Price": 355, "Deal Price": 329, "Event Price": 313},
+            {"Height(H)": 55, "Width(W)": 100.0, "Size(HxW)": "55x100", "Unit": "Cm", "Color": "WH", "Amazon Link": "https://www.amazon.in/dp/B0D1KQ8QMR/", "Selling Price": 355, "Deal Price": 329, "Event Price": 313},
+            {"Height(H)": 50, "Width(W)": 110.0, "Size(HxW)": "50x110", "Unit": "Cm", "Color": "BK", "Amazon Link": "https://www.amazon.in/dp/B0D1KPSTPX/", "Selling Price": 355, "Deal Price": 329, "Event Price": 313},
+            {"Height(H)": 50, "Width(W)": 110.0, "Size(HxW)": "50x110", "Unit": "Cm", "Color": "CR", "Amazon Link": "https://www.amazon.in/dp/B0D1KRXKRX/", "Selling Price": 355, "Deal Price": 329, "Event Price": 313},
+            {"Height(H)": 50, "Width(W)": 110.0, "Size(HxW)": "50x110", "Unit": "Cm", "Color": "GR", "Amazon Link": "https://www.amazon.in/dp/B0D1KPMKN5/", "Selling Price": 355, "Deal Price": 329, "Event Price": 313},
+            {"Height(H)": 50, "Width(W)": 110.0, "Size(HxW)": "50x110", "Unit": "Cm", "Color": "WH", "Amazon Link": "https://www.amazon.in/dp/B0D1KQJLQH/", "Selling Price": 355, "Deal Price": 329, "Event Price": 313},
+            {"Height(H)": 60, "Width(W)": 95.0, "Size(HxW)": "60x95", "Unit": "Cm", "Color": "BK", "Amazon Link": "https://www.amazon.in/dp/B0D1KRCPV2/", "Selling Price": 355, "Deal Price": 329, "Event Price": 313},
+            {"Height(H)": 60, "Width(W)": 95.0, "Size(HxW)": "60x95", "Unit": "Cm", "Color": "CR", "Amazon Link": "https://www.amazon.in/dp/B0D1KP7JVK/", "Selling Price": 355, "Deal Price": 329, "Event Price": 313},
+            {"Height(H)": 60, "Width(W)": 95.0, "Size(HxW)": "60x95", "Unit": "Cm", "Color": "GR", "Amazon Link": "https://www.amazon.in/dp/B0D1KQD2YZ/", "Selling Price": 355, "Deal Price": 329, "Event Price": 313},
+            {"Height(H)": 60, "Width(W)": 95.0, "Size(HxW)": "60x95", "Unit": "Cm", "Color": "WH", "Amazon Link": "https://www.amazon.in/dp/B0D1KNXLK5/", "Selling Price": 355, "Deal Price": 329, "Event Price": 313},
+            {"Height(H)": 65, "Width(W)": 90.0, "Size(HxW)": "65x90", "Unit": "Cm", "Color": "BK", "Amazon Link": "https://www.amazon.in/dp/B0D1KNW1V3/", "Selling Price": 355, "Deal Price": 329, "Event Price": 313},
+            {"Height(H)": 65, "Width(W)": 90.0, "Size(HxW)": "65x90", "Unit": "Cm", "Color": "CR", "Amazon Link": "https://www.amazon.in/dp/B0D1KRLLX5/", "Selling Price": 355, "Deal Price": 329, "Event Price": 313},
+            {"Height(H)": 65, "Width(W)": 90.0, "Size(HxW)": "65x90", "Unit": "Cm", "Color": "GR", "Amazon Link": "https://www.amazon.in/dp/B0D1KPWF5N/", "Selling Price": 355, "Deal Price": 329, "Event Price": 313},
+            {"Height(H)": 65, "Width(W)": 90.0, "Size(HxW)": "65x90", "Unit": "Cm", "Color": "WH", "Amazon Link": "https://www.amazon.in/dp/B0D1KPSKFC/", "Selling Price": 355, "Deal Price": 329, "Event Price": 313},
+            {"Height(H)": 55, "Width(W)": 105.0, "Size(HxW)": "55x105", "Unit": "Cm", "Color": "BK", "Amazon Link": "https://www.amazon.in/dp/B0D1KPZZ74/", "Selling Price": 355, "Deal Price": 329, "Event Price": 313},
+            {"Height(H)": 55, "Width(W)": 105.0, "Size(HxW)": "55x105", "Unit": "Cm", "Color": "CR", "Amazon Link": "https://www.amazon.in/dp/B0D1KQR4T4/", "Selling Price": 355, "Deal Price": 329, "Event Price": 313},
+            {"Height(H)": 55, "Width(W)": 105.0, "Size(HxW)": "55x105", "Unit": "Cm", "Color": "GR", "Amazon Link": "https://www.amazon.in/dp/B0D1KQ8F4Z/", "Selling Price": 355, "Deal Price": 329, "Event Price": 313},
+            {"Height(H)": 55, "Width(W)": 105.0, "Size(HxW)": "55x105", "Unit": "Cm", "Color": "WH", "Amazon Link": "https://www.amazon.in/dp/B0D1KQ8QMR/", "Selling Price": 355, "Deal Price": 329, "Event Price": 313},
+            {"Height(H)": 50, "Width(W)": 115.0, "Size(HxW)": "50x115", "Unit": "Cm", "Color": "BK", "Amazon Link": "https://www.amazon.in/dp/B0D1KPSTPX/", "Selling Price": 355, "Deal Price": 329, "Event Price": 313},
+            {"Height(H)": 50, "Width(W)": 115.0, "Size(HxW)": "50x115", "Unit": "Cm", "Color": "CR", "Amazon Link": "https://www.amazon.in/dp/B0D1KRXKRX/", "Selling Price": 355, "Deal Price": 329, "Event Price": 313},
+            {"Height(H)": 50, "Width(W)": 115.0, "Size(HxW)": "50x115", "Unit": "Cm", "Color": "GR", "Amazon Link": "https://www.amazon.in/dp/B0D1KPMKN5/", "Selling Price": 355, "Deal Price": 329, "Event Price": 313},
+            {"Height(H)": 50, "Width(W)": 115.0, "Size(HxW)": "50x115", "Unit": "Cm", "Color": "WH", "Amazon Link": "https://www.amazon.in/dp/B0D1KQJLQH/", "Selling Price": 355, "Deal Price": 329, "Event Price": 313},
+            {"Height(H)": 60, "Width(W)": 100.0, "Size(HxW)": "60x100", "Unit": "Cm", "Color": "BK", "Amazon Link": "https://www.amazon.in/dp/B0D1KRCPV2/", "Selling Price": 355, "Deal Price": 329, "Event Price": 313},
+            {"Height(H)": 60, "Width(W)": 100.0, "Size(HxW)": "60x100", "Unit": "Cm", "Color": "CR", "Amazon Link": "https://www.amazon.in/dp/B0D1KP7JVK/", "Selling Price": 355, "Deal Price": 329, "Event Price": 313},
+            {"Height(H)": 60, "Width(W)": 100.0, "Size(HxW)": "60x100", "Unit": "Cm", "Color": "GR", "Amazon Link": "https://www.amazon.in/dp/B0D1KQD2YZ/", "Selling Price": 355, "Deal Price": 329, "Event Price": 313},
+            {"Height(H)": 60, "Width(W)": 100.0, "Size(HxW)": "60x100", "Unit": "Cm", "Color": "WH", "Amazon Link": "https://www.amazon.in/dp/B0D1KNXLK5/", "Selling Price": 355, "Deal Price": 329, "Event Price": 313},
+            {"Height(H)": 65, "Width(W)": 95.0, "Size(HxW)": "65x95", "Unit": "Cm", "Color": "BK", "Amazon Link": "https://www.amazon.in/dp/B0D1KNW1V3/", "Selling Price": 355, "Deal Price": 329, "Event Price": 313},
+            {"Height(H)": 65, "Width(W)": 95.0, "Size(HxW)": "65x95", "Unit": "Cm", "Color": "CR", "Amazon Link": "https://www.amazon.in/dp/B0D1KRLLX5/", "Selling Price": 355, "Deal Price": 329, "Event Price": 313},
+            {"Height(H)": 65, "Width(W)": 95.0, "Size(HxW)": "65x95", "Unit": "Cm", "Color": "GR", "Amazon Link": "https://www.amazon.in/dp/B0D1KPWF5N/", "Selling Price": 355, "Deal Price": 329, "Event Price": 313},
+            {"Height(H)": 65, "Width(W)": 95.0, "Size(HxW)": "65x95", "Unit": "Cm", "Color": "WH", "Amazon Link": "https://www.amazon.in/dp/B0D1KPSKFC/", "Selling Price": 355, "Deal Price": 329, "Event Price": 313},
+            {"Height(H)": 55, "Width(W)": 110.0, "Size(HxW)": "55x110", "Unit": "Cm", "Color": "BK", "Amazon Link": "https://www.amazon.in/dp/B0D1KPZZ74/", "Selling Price": 355, "Deal Price": 329, "Event Price": 313},
+            {"Height(H)": 55, "Width(W)": 110.0, "Size(HxW)": "55x110", "Unit": "Cm", "Color": "CR", "Amazon Link": "https://www.amazon.in/dp/B0D1KQR4T4/", "Selling Price": 355, "Deal Price": 329, "Event Price": 313},
+            {"Height(H)": 55, "Width(W)": 110.0, "Size(HxW)": "55x110", "Unit": "Cm", "Color": "GR", "Amazon Link": "https://www.amazon.in/dp/B0D1KQ8F4Z/", "Selling Price": 355, "Deal Price": 329, "Event Price": 313},
+            {"Height(H)": 55, "Width(W)": 110.0, "Size(HxW)": "55x110", "Unit": "Cm", "Color": "WH", "Amazon Link": "https://www.amazon.in/dp/B0D1KQ8QMR/", "Selling Price": 355, "Deal Price": 329, "Event Price": 313},
+            {"Height(H)": 50, "Width(W)": 120.0, "Size(HxW)": "50x120", "Unit": "Cm", "Color": "BK", "Amazon Link": "https://www.amazon.in/dp/B0D1KPSTPX/", "Selling Price": 355, "Deal Price": 329, "Event Price": 313},
+            {"Height(H)": 50, "Width(W)": 120.0, "Size(HxW)": "50x120", "Unit": "Cm", "Color": "CR", "Amazon Link": "https://www.amazon.in/dp/B0D1KRXKRX/", "Selling Price": 355, "Deal Price": 329, "Event Price": 313},
+            {"Height(H)": 50, "Width(W)": 120.0, "Size(HxW)": "50x120", "Unit": "Cm", "Color": "GR", "Amazon Link": "https://www.amazon.in/dp/B0D1KPMKN5/", "Selling Price": 355, "Deal Price": 329, "Event Price": 313},
+            {"Height(H)": 50, "Width(W)": 120.0, "Size(HxW)": "50x120", "Unit": "Cm", "Color": "WH", "Amazon Link": "https://www.amazon.in/dp/B0D1KQJLQH/", "Selling Price": 355, "Deal Price": 329, "Event Price": 313},
+            {"Height(H)": 60, "Width(W)": 105.0, "Size(HxW)": "60x105", "Unit": "Cm", "Color": "BK", "Amazon Link": "https://www.amazon.in/dp/B0D1KRCPV2/", "Selling Price": 355, "Deal Price": 329, "Event Price": 313},
+            {"Height(H)": 60, "Width(W)": 105.0, "Size(HxW)": "60x105", "Unit": "Cm", "Color": "CR", "Amazon Link": "https://www.amazon.in/dp/B0D1KP7JVK/", "Selling Price": 355, "Deal Price": 329, "Event Price": 313},
+            {"Height(H)": 60, "Width(W)": 105.0, "Size(HxW)": "60x105", "Unit": "Cm", "Color": "GR", "Amazon Link": "https://www.amazon.in/dp/B0D1KQD2YZ/", "Selling Price": 355, "Deal Price": 329, "Event Price": 313},
+            {"Height(H)": 60, "Width(W)": 105.0, "Size(HxW)": "60x105", "Unit": "Cm", "Color": "WH", "Amazon Link": "https://www.amazon.in/dp/B0D1KNXLK5/", "Selling Price": 355, "Deal Price": 329, "Event Price": 313},
+            {"Height(H)": 65, "Width(W)": 100.0, "Size(HxW)": "65x100", "Unit": "Cm", "Color": "BK", "Amazon Link": "https://www.amazon.in/dp/B0D1KNW1V3/", "Selling Price": 355, "Deal Price": 329, "Event Price": 313},
+            {"Height(H)": 65, "Width(W)": 100.0, "Size(HxW)": "65x100", "Unit": "Cm", "Color": "CR", "Amazon Link": "https://www.amazon.in/dp/B0D1KRLLX5/", "Selling Price": 355, "Deal Price": 329, "Event Price": 313},
+            {"Height(H)": 65, "Width(W)": 100.0, "Size(HxW)": "65x100", "Unit": "Cm", "Color": "GR", "Amazon Link": "https://www.amazon.in/dp/B0D1KPWF5N/", "Selling Price": 355, "Deal Price": 329, "Event Price": 313},
+            {"Height(H)": 65, "Width(W)": 100.0, "Size(HxW)": "65x100", "Unit": "Cm", "Color": "WH", "Amazon Link": "https://www.amazon.in/dp/B0D1KPSKFC/", "Selling Price": 355, "Deal Price": 329, "Event Price": 313},
+            {"Height(H)": 55, "Width(W)": 115.0, "Size(HxW)": "55x115", "Unit": "Cm", "Color": "BK", "Amazon Link": "https://www.amazon.in/dp/B0D1KPZZ74/", "Selling Price": 355, "Deal Price": 329, "Event Price": 313},
+            {"Height(H)": 55, "Width(W)": 115.0, "Size(HxW)": "55x115", "Unit": "Cm", "Color": "CR", "Amazon Link": "https://www.amazon.in/dp/B0D1KQR4T4/", "Selling Price": 355, "Deal Price": 329, "Event Price": 313},
+            {"Height(H)": 55, "Width(W)": 115.0, "Size(HxW)": "55x115", "Unit": "Cm", "Color": "GR", "Amazon Link": "https://www.amazon.in/dp/B0D1KQ8F4Z/", "Selling Price": 355, "Deal Price": 329, "Event Price": 313},
+            {"Height(H)": 55, "Width(W)": 115.0, "Size(HxW)": "55x115", "Unit": "Cm", "Color": "WH", "Amazon Link": "https://www.amazon.in/dp/B0D1KQ8Q
