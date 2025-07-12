@@ -1,0 +1,203 @@
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ArmorX Retail Shop</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+        .container {
+            max-width: 100%;
+            margin: 10px;
+            padding: 10px;
+        }
+        .login-box, .order-box {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        input, select, button {
+            width: 100%;
+            padding: 10px;
+            margin: 5px 0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+        #sizeList {
+            display: none;
+        }
+        #total {
+            font-weight: bold;
+            color: #28a745;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div id="loginBox" class="login-box">
+            <h2>Login</h2>
+            <input type="tel" id="phone" placeholder="Enter 10-digit phone number" maxlength="10" pattern="[0-9]{10}" required>
+            <button onclick="login()">Login</button>
+       </div>
+        <div id="sizeList" class="order-box">
+            <h2>Select Window Sizes</h2>
+            <select id="sizeSelect" onchange="updatePrice()">
+                <option value="">Select Size</option>
+            </select>
+            <input type="number" id="quantity" placeholder="Quantity" min="1" value="1" onchange="updatePrice()">
+            <p>Price: <span id="price"></span> ₹</p>
+            <p>Total: <span id="total"></span> ₹</p>
+            <button onclick="addToOrder()">Add to Order</button>
+            <h3>Order Summary</h3>
+            <ul id="orderSummary"></ul>
+            <button onclick="sendOrder()">Send via WhatsApp</button>
+        </div>
+    </div>
+
+    <script>
+        let sizes = [];
+        let order = [];
+
+        // Load sizes from JSON (simulated from your document)
+        sizes = [
+            { "Size(HxW)": "50x50", "Unit": "Cm", "Color": "BK", "Selling Price": 323 },
+            { "Size(HxW)": "50x50", "Unit": "Cm", "Color": "CR", "Selling Price": 323 },
+            { "Size(HxW)": "50x55", "Unit": "Cm", "Color": "BK", "Selling Price": 323 },
+            // Add more sizes as needed from your JSON
+        ];
+
+        function login() {
+            let phone = document.getElementById('phone').value;
+            if (phone.length === 10 && /^\d+$/.test(phone)) {
+                document.getElementById('loginBox').style.display = 'none';
+                document.getElementById('sizeList').style.display = 'block';
+                populateSizes();
+            } else {
+                alert('Please enter a valid 10-digit phone number');
+            }
+        }
+
+        function populateSizes() {
+            let select = document.getElementById('sizeSelect');
+            sizes.forEach(size => {
+                let option = document.createElement('option');
+                option.value = JSON.stringify(size);
+                option.text = `${size['Size(HxW)']} (${size['Unit']}) - ${size['Color']}`;
+                select.appendChild(option);
+            });
+        }
+
+        function updatePrice() {
+            let select = document.getElementById('sizeSelect');
+            let quantity = document.getElementById('quantity').value;
+            if (select.value) {
+                let size = JSON.parse(select.value);
+                let price = size['Selling Price'] * quantity;
+                document.getElementById('price').textContent = size['Selling Price'];
+                document.getElementById('total').textContent = price;
+            }
+        }
+
+        function addToOrder() {
+            let select = document.getElementById('sizeSelect');
+            let quantity = document.getElementById('quantity').value;
+            if (select.value && quantity > 0) {
+                let size = JSON.parse(select.value);
+                let item = { ...size, quantity: parseInt(quantity) };
+                order.push(item);
+                updateOrderSummary();
+                select.value = '';
+                document.getElementById('quantity').value = 1;
+                document.getElementById('price').textContent = '';
+                document.getElementById('total').textContent = '';
+            }
+        }
+
+        function updateOrderSummary() {
+            let summary = document.getElementById('orderSummary');
+            summary.innerHTML = '';
+            let totalCost = 0;
+            order.forEach(item => {
+                let li = document.createElement('li');
+                li.textContent = `${item['Size(HxW)']} (${item['Unit']}) - ${item['Color']} x ${item.quantity} = ${item['Selling Price'] * item.quantity} ₹`;
+                summary.appendChild(li);
+                totalCost += item['Selling Price'] * item.quantity;
+            });
+            let liTotal = document.createElement('li');
+            liTotal.textContent = `Total Invoice: ${totalCost} ₹`;
+            summary.appendChild(liTotal);
+        }
+
+        function sendOrder() {
+            if (order.length > 0) {
+                let phone = document.getElementById('phone').value;
+                let message = `Order from Distributor (Phone: +91-${phone}):\n\n`;
+                order.forEach(item => {
+                    message += `${item['Size(HxW)']} (${item['Unit']}) - ${item['Color']} x ${item.quantity} = ${item['Selling Price'] * item.quantity} ₹\n`;
+                });
+                message += `\nTotal Invoice: ${order.reduce((sum, item) => sum + item['Selling Price'] * item.quantity, 0)} ₹`;
+                let whatsappURL = `https://wa.me/917304692553?text=${encodeURIComponent(message)}`;
+                window.open(whatsappURL, '_blank');
+            } else {
+                alert('Please add items to your order first');
+            }
+        }
+    </script>
+</body>
+</html>
