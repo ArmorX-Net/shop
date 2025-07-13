@@ -156,3 +156,15 @@ button:hover { background: var(--primary-dark); }
   background: #ffffe7;
   border-color: #c1ff72;
 }
+.upi-btn {
+  background: #2d8b6a;
+  color: #fff;
+  font-weight: 600;
+  border: none;
+  border-radius: 7px;
+  margin-top: 10px;
+  padding: 9px 0;
+  cursor: pointer;
+  box-shadow: 0 2px 7px #b9ffd3;
+}
+.upi-btn:hover { background: #1d674b; }
