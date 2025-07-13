@@ -24,8 +24,9 @@
       <div id="windows-list"></div>
       <button type="button" class="add-btn" onclick="addWindowEntry()">+ Add Window</button>
       <div class="invoice">
-        <strong>Total: ₹<span id="total-price">0</span></strong>
-      </div>
+  <strong>Total: ₹<span id="total-price">0</span></strong>
+  <button type="button" class="upi-btn" onclick="showUPIQR()">Collect Payment via UPI</button>
+</div>
       <h4>Customer Details</h4>
       <input id="cust-name" type="text" placeholder="Customer Name"/>
       <input id="cust-phone" type="tel" maxlength="10" placeholder="Customer Phone"/>
