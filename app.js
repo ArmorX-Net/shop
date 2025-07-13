@@ -166,8 +166,9 @@ function showUPIQR() {
     value: upiString,
     size: 220
   });
-  document.getElementById('upiText').innerText = upiID;
-  document.getElementById('upiModal').style.display = "flex";
+document.getElementById('upiText').innerText = upiID;
+document.getElementById('upiAmount').innerHTML = `Total Amount: <span style="font-size:1.25em;">₹${amount}</span>`;
+document.getElementById('upiModal').style.display = "flex";
 }
 
 function editUPI() {
