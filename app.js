@@ -212,18 +212,22 @@ function editUPI() {
 
 
 function sendOnWhatsApp() {
-  let name = document.getElementById('cust-name').value.trim();
-  let phone = document.getElementById('cust-phone').value.trim();
-  let delivery = document.getElementById('delivery-mode').value;
-  let address = '';
-  if (!name || !/^\d{10}$/.test(phone)) { alert('Enter customer details correctly!'); return; }
-  if (delivery === "Home Delivery") {
-    address = document.getElementById('cust-address').value.trim();
-    if (!address) { alert('Please enter customer address for Home Delivery.'); return; }
-  }
-  let msg = `ArmorX Order (Retailer: ${loggedRetailer})\nCustomer: ${name} (${phone})\nDelivery: ${delivery}`;
-  if (address) msg += `\nAddress: ${address}`;
-  msg += `\n\nWindows:\n`;
+let name = document.getElementById('cust-name').value.trim();
+let phone = document.getElementById('cust-phone').value.trim();
+let delivery = document.getElementById('delivery-mode').value;
+let address = '';
+if (!name || !/^\d{10}$/.test(phone)) { alert('Enter customer details correctly!'); return; }
+if (delivery === "Home Delivery") {
+  address = document.getElementById('cust-address').value.trim();
+  if (!address) { alert('Please enter customer address for Home Delivery.'); return; }
+}
+// CHANGE HERE: get retail info from localStorage
+let retailerName = localStorage.getItem('retailUserName') || "";
+let retailerNumber = localStorage.getItem('retailUser') || "";
+let msg = `ArmorX Order (Retailer: ${retailerName} - ${retailerNumber})\nCustomer: ${name} (${phone})\nDelivery: ${delivery}`;
+if (address) msg += `\nAddress: ${address}`;
+msg += `\n\nWindows:\n`;
+
   let total = 0;
   let hasAny = false;
   document.querySelectorAll('.window-box').forEach((box, i) => {
