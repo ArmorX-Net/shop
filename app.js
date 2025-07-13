@@ -1,6 +1,13 @@
 let windowCount = 0;
 let netSizes = [];
 let loggedRetailer = null;
+let authorizedDistributors = []; // will load from JSON
+
+// Load authorized list on page load
+fetch('RDDRetailDistData.json')
+  .then(r => r.json())
+  .then(data => { authorizedDistributors = data; });
+
 
 document.addEventListener("DOMContentLoaded", () => {
   fetch('MQ_Sizes_Unit_Color_and_Links.json')
@@ -21,9 +28,28 @@ document.addEventListener("DOMContentLoaded", () => {
 
 function login() {
   let phone = document.getElementById('retailer-phone').value.trim();
-  if (!/^\d{10}$/.test(phone)) { alert('Enter valid 10-digit mobile.'); return; }
+  if (!/^\d{10}$/.test(phone)) { 
+    alert('Enter valid 10-digit mobile.'); 
+    return; 
+  }
+
+  // Wait until list is loaded
+  if (!authorizedDistributors.length) {
+    alert("Loading authorized distributor list. Please try again in a moment.");
+    return;
+  }
+
+  // Find authorized distributor
+  let found = authorizedDistributors.find(x => x.mobile === phone);
+  if (!found) {
+    alert('Unauthorized. This mobile is not registered as an ArmorX Retail Distributor.');
+    return;
+  }
+  // Save for session/use (optional: you can show name on main screen)
   localStorage.setItem('retailUser', phone);
-  loggedRetailer = phone;
+  localStorage.setItem('retailUserName', found.name);
+
+  // Continue with your normal login logic:
   if (typeof showAfterLogin === "function") showAfterLogin();
   document.getElementById('login-section').style.display = 'none';
   document.getElementById('order-section').style.display = 'block';
@@ -31,6 +57,7 @@ function login() {
   if (document.getElementById('app-title')) document.getElementById('app-title').style.display = 'none';
   addWindowEntry();
 }
+
 
 function logout() {
   localStorage.removeItem('retailUser');
