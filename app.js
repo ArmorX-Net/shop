@@ -295,7 +295,7 @@ function sendOnWhatsApp() {
 }
 
 function sendOrderToSheet(orderObj) {
-  fetch('https://script.google.com/macros/s/AKfycbxIb3-J4n4Kt1sXBxcttdgcyQFSq7EZF_2eZ7H0r3ktRSXKSfkyRtWW7mr_DapkVh3nRA/exec', {
+  fetch('https://shop-tan-nine.vercel.app/api/proxy', { ... })
     method: 'POST',
     body: JSON.stringify(orderObj),
     headers: {'Content-Type': 'application/json'}
