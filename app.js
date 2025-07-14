@@ -295,7 +295,7 @@ function sendOnWhatsApp() {
 }
 
 function sendOrderToSheet(orderObj) {
-  fetch('https://shop-tan-nine.vercel.app/api/proxy', { ... })
+  fetch('https://shop-tan-nine.vercel.app/api/proxy', {
     method: 'POST',
     body: JSON.stringify(orderObj),
     headers: {'Content-Type': 'application/json'}
