@@ -294,3 +294,20 @@ function sendOnWhatsApp() {
   sendOrderToSheet(orderObj);
 }
 
+function sendOrderToSheet(orderObj) {
+  fetch('https://script.google.com/macros/s/AKfycbwnvo2OIaNFi3WN0ToSQjmc6LhFTZ6dhVZpa-aN3efZkD2B5SGQbKahmUUJtdxW63i_Og/exec', {
+    method: 'POST',
+    body: JSON.stringify(orderObj),
+    headers: {'Content-Type': 'application/json'}
+  })
+  .then(r => r.json())
+  .then(res => {
+    if(res.success) {
+      // Optionally, show a toast/alert: "Order saved in system!"
+    }
+  })
+  .catch(e => {
+    // Optionally, notify user/admin if logging to Sheet fails
+    console.error('Sheet logging failed:', e);
+  });
+}
