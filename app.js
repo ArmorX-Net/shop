@@ -311,6 +311,3 @@ function sendOrderToSheet(orderObj) {
     console.error('Sheet logging failed:', e);
   });
 }
-function doGet(e) {
-  return ContentService.createTextOutput("ArmorX Order API OK");
-}
