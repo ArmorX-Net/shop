@@ -210,25 +210,23 @@ function editUPI() {
   }
 }
 
+
 function sendOnWhatsApp() {
-  let name = document.getElementById('cust-name').value.trim();
-  let phone = document.getElementById('cust-phone').value.trim();
-  let delivery = document.getElementById('delivery-mode').value;
-  let address = '';
-  if (!name || !/^\d{10}$/.test(phone)) { alert('Enter customer details correctly!'); return; }
-  if (delivery === "Home Delivery") {
-    address = document.getElementById('cust-address').value.trim();
-    if (!address) { alert('Please enter customer address for Home Delivery.'); return; }
-  }
-
-  // Retail info from localStorage
-  let retailerName = localStorage.getItem('retailUserName') || "";
-  let retailerNumber = localStorage.getItem('retailUser') || "";
-
-  // --- Build WhatsApp message ---
-  let msg = `ArmorX Order (Retailer: ${retailerName} - ${retailerNumber})\nCustomer: ${name} (${phone})\nDelivery: ${delivery}`;
-  if (address) msg += `\nAddress: ${address}`;
-  msg += `\n\nWindows:\n`;
+let name = document.getElementById('cust-name').value.trim();
+let phone = document.getElementById('cust-phone').value.trim();
+let delivery = document.getElementById('delivery-mode').value;
+let address = '';
+if (!name || !/^\d{10}$/.test(phone)) { alert('Enter customer details correctly!'); return; }
+if (delivery === "Home Delivery") {
+  address = document.getElementById('cust-address').value.trim();
+  if (!address) { alert('Please enter customer address for Home Delivery.'); return; }
+}
+// CHANGE HERE: get retail info from localStorage
+let retailerName = localStorage.getItem('retailUserName') || "";
+let retailerNumber = localStorage.getItem('retailUser') || "";
+let msg = `ArmorX Order (Retailer: ${retailerName} - ${retailerNumber})\nCustomer: ${name} (${phone})\nDelivery: ${delivery}`;
+if (address) msg += `\nAddress: ${address}`;
+msg += `\n\nWindows:\n`;
 
   let total = 0;
   let hasAny = false;
@@ -249,68 +247,6 @@ function sendOnWhatsApp() {
   });
   if (!hasAny) { alert('Please enter at least one window net details.'); return; }
   msg += `\nTotal: ₹${total}`;
-
-  // --- Build windows array for the Sheet ---
-  let windowsArr = [];
-  document.querySelectorAll('.window-box').forEach((box, i) => {
-    let idx = box.id.split('-')[2];
-    let h = document.getElementById('h'+idx).value;
-    let w = document.getElementById('w'+idx).value;
-    let u = document.getElementById('u'+idx).value;
-    let c = document.getElementById('c'+idx).value;
-    let qty = document.getElementById('qty'+idx).value;
-    let price = document.getElementById('p'+idx).innerText;
-    if(h && w && qty > 0 && price) {
-      windowsArr.push({
-        height: h, width: w, unit: u,
-        color: c, qty: qty,
-        deal_price: (qty && price ? (parseFloat(price)/parseInt(qty)) : 0),
-        total: price
-      });
-    }
-  });
-
-  // --- Build the orderObj for Google Sheet ---
-  let orderObj = {
-    timestamp: new Date().toISOString(),
-    order_id: "",
-    retailer_name: retailerName,
-    retailer_mobile: retailerNumber,
-    customer_name: name,
-    customer_phone: phone,
-    address: address,
-    payment_status: "Pending",
-    confirmation_status: "Pending",
-    windows: windowsArr,
-    total_amount: total,
-    wa_message: msg
-  };
-
-  // Show "Saving order..." spinner
-  document.getElementById('savingSpinner').style.display = 'block';
-
-  // 1. Send to Google Sheet, then on success, open WhatsApp
-  sendOrderToSheet(orderObj)
-    .then(() => {
-      document.getElementById('savingSpinner').style.display = 'none';
-      // 2. Open WhatsApp with the message (after save completes)
-      let url = `https://wa.me/917304692553?text=${encodeURIComponent(msg)}`;
-      window.open(url, '_blank');
-    })
-    .catch(e => {
-      document.getElementById('savingSpinner').style.display = 'none';
-      alert("Order could not be saved! Please try again.");
-      console.error('Sheet logging failed:', e);
-    });
+  let url = `https://wa.me/917304692553?text=${encodeURIComponent(msg)}`;
+  window.open(url, '_blank');
 }
-
-// Make sure sendOrderToSheet returns a Promise!
-function sendOrderToSheet(orderObj) {
-  return fetch('https://shop-tan-nine.vercel.app/api/proxy', {
-    method: 'POST',
-    body: JSON.stringify(orderObj),
-    headers: {'Content-Type': 'application/json'}
-  })
-  .then(r => r.json());
-}
-
