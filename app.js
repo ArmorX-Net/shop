@@ -273,6 +273,50 @@ function sendOnWhatsApp() {
   // --- Build the orderObj for Google Sheet ---
   let orderObj = {
     timestamp: new Date().toISOString(),
+    order_id: "",
+    retailer_name: retailerName,
+    retailer_mobile: retailerNumber,
+    customer_name: name,
+    customer_phone: phone,
+    address: address,
+    payment_status: "Pending",
+    confirmation_status: "Pending",
+    windows: windowsArr,
+    total_amount: total,
+    wa_message: msg
+  };
+
+  // Show "Saving order..." spinner
+  document.getElementById('savingSpinner').style.display = 'block';
+
+  // 1. Send to Google Sheet, then on success, open WhatsApp
+  sendOrderToSheet(orderObj)
+    .then(() => {
+      document.getElementById('savingSpinner').style.display = 'none';
+      // 2. Open WhatsApp with the message (after save completes)
+      let url = `https://wa.me/917304692553?text=${encodeURIComponent(msg)}`;
+      window.open(url, '_blank');
+    })
+    .catch(e => {
+      document.getElementById('savingSpinner').style.display = 'none';
+      alert("Order could not be saved! Please try again.");
+      console.error('Sheet logging failed:', e);
+    });
+}
+
+// Make sure sendOrderToSheet returns a Promise!
+function sendOrderToSheet(orderObj) {
+  return fetch('https://shop-tan-nine.vercel.app/api/proxy', {
+    method: 'POST',
+    body: JSON.stringify(orderObj),
+    headers: {'Content-Type': 'application/json'}
+  })
+  .then(r => r.json());
+}
+
+  // --- Build the orderObj for Google Sheet ---
+  let orderObj = {
+    timestamp: new Date().toISOString(),
     order_id: "", // leave blank for auto ID, or set custom if needed
     retailer_name: retailerName,
     retailer_mobile: retailerNumber,
