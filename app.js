@@ -295,7 +295,7 @@ function sendOnWhatsApp() {
 }
 
 function sendOrderToSheet(orderObj) {
-  fetch('https://script.google.com/macros/s/AKfycbwnvo2OIaNFi3WN0ToSQjmc6LhFTZ6dhVZpa-aN3efZkD2B5SGQbKahmUUJtdxW63i_Og/exec', {
+  fetch('https://script.google.com/macros/s/AKfycbxIb3-J4n4Kt1sXBxcttdgcyQFSq7EZF_2eZ7H0r3ktRSXKSfkyRtWW7mr_DapkVh3nRA/exec', {
     method: 'POST',
     body: JSON.stringify(orderObj),
     headers: {'Content-Type': 'application/json'}
