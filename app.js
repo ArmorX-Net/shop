@@ -304,7 +304,7 @@ function sendOnWhatsApp() {
     });
 }
 
-// Make sure sendOrderToSheet returns a Promise!
+// This function returns a Promise!
 function sendOrderToSheet(orderObj) {
   return fetch('https://shop-tan-nine.vercel.app/api/proxy', {
     method: 'POST',
