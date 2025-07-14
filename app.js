@@ -210,23 +210,25 @@ function editUPI() {
   }
 }
 
-
 function sendOnWhatsApp() {
-let name = document.getElementById('cust-name').value.trim();
-let phone = document.getElementById('cust-phone').value.trim();
-let delivery = document.getElementById('delivery-mode').value;
-let address = '';
-if (!name || !/^\d{10}$/.test(phone)) { alert('Enter customer details correctly!'); return; }
-if (delivery === "Home Delivery") {
-  address = document.getElementById('cust-address').value.trim();
-  if (!address) { alert('Please enter customer address for Home Delivery.'); return; }
-}
-// CHANGE HERE: get retail info from localStorage
-let retailerName = localStorage.getItem('retailUserName') || "";
-let retailerNumber = localStorage.getItem('retailUser') || "";
-let msg = `ArmorX Order (Retailer: ${retailerName} - ${retailerNumber})\nCustomer: ${name} (${phone})\nDelivery: ${delivery}`;
-if (address) msg += `\nAddress: ${address}`;
-msg += `\n\nWindows:\n`;
+  let name = document.getElementById('cust-name').value.trim();
+  let phone = document.getElementById('cust-phone').value.trim();
+  let delivery = document.getElementById('delivery-mode').value;
+  let address = '';
+  if (!name || !/^\d{10}$/.test(phone)) { alert('Enter customer details correctly!'); return; }
+  if (delivery === "Home Delivery") {
+    address = document.getElementById('cust-address').value.trim();
+    if (!address) { alert('Please enter customer address for Home Delivery.'); return; }
+  }
+
+  // Retail info from localStorage
+  let retailerName = localStorage.getItem('retailUserName') || "";
+  let retailerNumber = localStorage.getItem('retailUser') || "";
+
+  // --- Build WhatsApp message ---
+  let msg = `ArmorX Order (Retailer: ${retailerName} - ${retailerNumber})\nCustomer: ${name} (${phone})\nDelivery: ${delivery}`;
+  if (address) msg += `\nAddress: ${address}`;
+  msg += `\n\nWindows:\n`;
 
   let total = 0;
   let hasAny = false;
@@ -247,6 +249,47 @@ msg += `\n\nWindows:\n`;
   });
   if (!hasAny) { alert('Please enter at least one window net details.'); return; }
   msg += `\nTotal: ₹${total}`;
+
+  // --- Build windows array for the Sheet ---
+  let windowsArr = [];
+  document.querySelectorAll('.window-box').forEach((box, i) => {
+    let idx = box.id.split('-')[2];
+    let h = document.getElementById('h'+idx).value;
+    let w = document.getElementById('w'+idx).value;
+    let u = document.getElementById('u'+idx).value;
+    let c = document.getElementById('c'+idx).value;
+    let qty = document.getElementById('qty'+idx).value;
+    let price = document.getElementById('p'+idx).innerText;
+    if(h && w && qty > 0 && price) {
+      windowsArr.push({
+        height: h, width: w, unit: u,
+        color: c, qty: qty,
+        deal_price: (price/qty),
+        total: price
+      });
+    }
+  });
+
+  // --- Build the orderObj for Google Sheet ---
+  let orderObj = {
+    timestamp: new Date().toISOString(),
+    order_id: "", // leave blank for auto ID, or set custom if needed
+    retailer_name: retailerName,
+    retailer_mobile: retailerNumber,
+    customer_name: name,
+    customer_phone: phone,
+    address: address,
+    payment_status: "Pending", // or "Paid" after verification
+    confirmation_status: "Pending",
+    windows: windowsArr,
+    total_amount: total,
+    wa_message: msg // THE MESSAGE you built above!
+  };
+
+  // 1. Send to Google Sheet
+  sendOrderToSheet(orderObj);
+
+  // 2. Open WhatsApp with the message
   let url = `https://wa.me/917304692553?text=${encodeURIComponent(msg)}`;
   window.open(url, '_blank');
 }
