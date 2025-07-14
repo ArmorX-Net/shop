@@ -264,7 +264,7 @@ function sendOnWhatsApp() {
       windowsArr.push({
         height: h, width: w, unit: u,
         color: c, qty: qty,
-        deal_price: (price/qty),
+        deal_price: (qty && price ? (parseFloat(price)/parseInt(qty)) : 0),
         total: price
       });
     }
@@ -279,17 +279,18 @@ function sendOnWhatsApp() {
     customer_name: name,
     customer_phone: phone,
     address: address,
-    payment_status: "Pending", // or "Paid" after verification
+    payment_status: "Pending",
     confirmation_status: "Pending",
     windows: windowsArr,
     total_amount: total,
-    wa_message: msg // THE MESSAGE you built above!
+    wa_message: msg
   };
 
-  // 1. Send to Google Sheet
-  sendOrderToSheet(orderObj);
-
-  // 2. Open WhatsApp with the message
+  // 1. Open WhatsApp with the message
   let url = `https://wa.me/917304692553?text=${encodeURIComponent(msg)}`;
   window.open(url, '_blank');
+
+  // 2. Send to Google Sheet (only after WhatsApp opened)
+  sendOrderToSheet(orderObj);
 }
+
