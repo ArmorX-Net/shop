@@ -226,9 +226,9 @@ function sendOnWhatsApp() {
   let retailerNumber = localStorage.getItem('retailUser') || "";
 
   // --- Build WhatsApp message ---
-  let msg = `ArmorX Order (Retailer: ${retailerName} - ${retailerNumber})\nCustomer: ${name} (${phone})\nDelivery: ${delivery}`;
-  if (address) msg += `\nAddress: ${address}`;
-  msg += `\n\nWindows:\n`;
+  let msg = ArmorX Order (Retailer: ${retailerName} - ${retailerNumber})\nCustomer: ${name} (${phone})\nDelivery: ${delivery};
+  if (address) msg += \nAddress: ${address};
+  msg += \n\nWindows:\n;
 
   let total = 0;
   let hasAny = false;
@@ -242,13 +242,13 @@ function sendOnWhatsApp() {
     let price = document.getElementById('p'+idx).innerText;
     let colorName = { BK: 'Black', CR: 'Cream', GR: 'Grey', WH: 'White' }[c] || c;
     if (h && w && price && qty > 0) {
-      msg += `#${i+1}: ${h}x${w} ${u} | ${colorName} | Qty: ${qty} | ₹${price}\n`;
+      msg += #${i+1}: ${h}x${w} ${u} | ${colorName} | Qty: ${qty} | ₹${price}\n;
       total += parseFloat(price);
       hasAny = true;
     }
   });
   if (!hasAny) { alert('Please enter at least one window net details.'); return; }
-  msg += `\nTotal: ₹${total}`;
+  msg += \nTotal: ₹${total};
 
   // --- Build windows array for the Sheet ---
   let windowsArr = [];
@@ -269,51 +269,7 @@ function sendOnWhatsApp() {
       });
     }
   });
-
-  // --- Build the orderObj for Google Sheet ---
-  let orderObj = {
-    timestamp: new Date().toISOString(),
-    order_id: "",
-    retailer_name: retailerName,
-    retailer_mobile: retailerNumber,
-    customer_name: name,
-    customer_phone: phone,
-    address: address,
-    payment_status: "Pending",
-    confirmation_status: "Pending",
-    windows: windowsArr,
-    total_amount: total,
-    wa_message: msg
-  };
-
-  // Show "Saving order..." spinner
-  document.getElementById('savingSpinner').style.display = 'block';
-
-  // 1. Send to Google Sheet, then on success, open WhatsApp
-  sendOrderToSheet(orderObj)
-    .then(() => {
-      document.getElementById('savingSpinner').style.display = 'none';
-      // 2. Open WhatsApp with the message (after save completes)
-      let url = `https://wa.me/917304692553?text=${encodeURIComponent(msg)}`;
-      window.open(url, '_blank');
-    })
-    .catch(e => {
-      document.getElementById('savingSpinner').style.display = 'none';
-      alert("Order could not be saved! Please try again.");
-      console.error('Sheet logging failed:', e);
-    });
-}
-
-// This function returns a Promise!
-function sendOrderToSheet(orderObj) {
-  return fetch('https://shop-tan-nine.vercel.app/api/proxy', {
-    method: 'POST',
-    body: JSON.stringify(orderObj),
-    headers: {'Content-Type': 'application/json'}
-  })
-  .then(r => r.json());
-}
-
+  
   // --- Build the orderObj for Google Sheet ---
   let orderObj = {
     timestamp: new Date().toISOString(),
