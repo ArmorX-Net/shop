@@ -212,21 +212,24 @@ function editUPI() {
 
 
 function sendOnWhatsApp() {
-let name = document.getElementById('cust-name').value.trim();
-let phone = document.getElementById('cust-phone').value.trim();
-let delivery = document.getElementById('delivery-mode').value;
-let address = '';
-if (!name || !/^\d{10}$/.test(phone)) { alert('Enter customer details correctly!'); return; }
-if (delivery === "Home Delivery") {
-  address = document.getElementById('cust-address').value.trim();
-  if (!address) { alert('Please enter customer address for Home Delivery.'); return; }
-}
-// CHANGE HERE: get retail info from localStorage
-let retailerName = localStorage.getItem('retailUserName') || "";
-let retailerNumber = localStorage.getItem('retailUser') || "";
-let msg = `ArmorX Order (Retailer: ${retailerName} - ${retailerNumber})\nCustomer: ${name} (${phone})\nDelivery: ${delivery}`;
-if (address) msg += `\nAddress: ${address}`;
-msg += `\n\nWindows:\n`;
+  let name = document.getElementById('cust-name').value.trim();
+  let phone = document.getElementById('cust-phone').value.trim();
+  let delivery = document.getElementById('delivery-mode').value;
+  let address = '';
+  if (!name || !/^\d{10}$/.test(phone)) { alert('Enter customer details correctly!'); return; }
+  if (delivery === "Home Delivery") {
+    address = document.getElementById('cust-address').value.trim();
+    if (!address) { alert('Please enter customer address for Home Delivery.'); return; }
+  }
+
+  // Retail info from localStorage
+  let retailerName = localStorage.getItem('retailUserName') || "";
+  let retailerNumber = localStorage.getItem('retailUser') || "";
+
+  // --- Build WhatsApp message ---
+  let msg = ArmorX Order (Retailer: ${retailerName} - ${retailerNumber})\nCustomer: ${name} (${phone})\nDelivery: ${delivery};
+  if (address) msg += \nAddress: ${address};
+  msg += \n\nWindows:\n;
 
   let total = 0;
   let hasAny = false;
@@ -240,13 +243,72 @@ msg += `\n\nWindows:\n`;
     let price = document.getElementById('p'+idx).innerText;
     let colorName = { BK: 'Black', CR: 'Cream', GR: 'Grey', WH: 'White' }[c] || c;
     if (h && w && price && qty > 0) {
-      msg += `#${i+1}: ${h}x${w} ${u} | ${colorName} | Qty: ${qty} | ₹${price}\n`;
+      msg += #${i+1}: ${h}x${w} ${u} | ${colorName} | Qty: ${qty} | ₹${price}\n;
       total += parseFloat(price);
       hasAny = true;
     }
   });
   if (!hasAny) { alert('Please enter at least one window net details.'); return; }
-  msg += `\nTotal: ₹${total}`;
-  let url = `https://wa.me/917304692553?text=${encodeURIComponent(msg)}`;
+  msg += \nTotal: ₹${total};
+
+  // --- Build windows array for the Sheet ---
+  let windowsArr = [];
+  document.querySelectorAll('.window-box').forEach((box, i) => {
+    let idx = box.id.split('-')[2];
+    let h = document.getElementById('h'+idx).value;
+    let w = document.getElementById('w'+idx).value;
+    let u = document.getElementById('u'+idx).value;
+    let c = document.getElementById('c'+idx).value;
+    let qty = document.getElementById('qty'+idx).value;
+    let price = document.getElementById('p'+idx).innerText;
+    if(h && w && qty > 0 && price) {
+      windowsArr.push({
+        height: h, width: w, unit: u,
+        color: c, qty: qty,
+        deal_price: (qty && price ? (parseFloat(price)/parseInt(qty)) : 0),
+        total: price
+      });
+    }
+  });
+
+  // --- Build the orderObj for Google Sheet ---
+  let orderObj = {
+    timestamp: new Date().toISOString(),
+    order_id: "", // leave blank for auto ID, or set custom if needed
+    retailer_name: retailerName,
+    retailer_mobile: retailerNumber,
+    customer_name: name,
+    customer_phone: phone,
+    address: address,
+    payment_status: "Pending",
+    confirmation_status: "Pending",
+    windows: windowsArr,
+    total_amount: total,
+    wa_message: msg
+  };
+
+  // 1. Open WhatsApp with the message
+  let url = https://wa.me/917304692553?text=${encodeURIComponent(msg)};
   window.open(url, '_blank');
+
+  // 2. Send to Google Sheet (only after WhatsApp opened)
+  sendOrderToSheet(orderObj);
+}
+
+function sendOrderToSheet(orderObj) {
+  fetch('https://shop-tan-nine.vercel.app/api/proxy', {
+    method: 'POST',
+    body: JSON.stringify(orderObj),
+    headers: {'Content-Type': 'application/json'}
+  })
+  .then(r => r.json())
+  .then(res => {
+    if(res.success) {
+      // Optionally, show a toast/alert: "Order saved in system!"
+    }
+  })
+  .catch(e => {
+    // Optionally, notify user/admin if logging to Sheet fails
+    console.error('Sheet logging failed:', e);
+  });
 }
