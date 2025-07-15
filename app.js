@@ -314,3 +314,61 @@ function sendOrderToSheet(orderObj) {
   });
 }
 
+// === Retailer PIN & Payout Logic (keep this together!) ===
+
+// Attach long-press detection on logo after DOM loads
+document.addEventListener("DOMContentLoaded", function() {
+  const logo = document.querySelector('.brand-logo');
+  let timer = null;
+  if (logo) {
+    logo.addEventListener('mousedown', () => { timer = setTimeout(showPinModal, 850); });
+    logo.addEventListener('touchstart', () => { timer = setTimeout(showPinModal, 850); });
+    logo.addEventListener('mouseup', () => { if (timer) clearTimeout(timer); });
+    logo.addEventListener('mouseleave', () => { if (timer) clearTimeout(timer); });
+    logo.addEventListener('touchend', () => { if (timer) clearTimeout(timer); });
+  }
+});
+
+function showPinModal() {
+  document.getElementById('retailerPinInput').value = "";
+  document.getElementById('pinError').style.display = "none";
+  document.getElementById('pinModal').style.display = "flex";
+  setTimeout(() => {
+    document.getElementById('retailerPinInput').focus();
+  }, 100);
+}
+function closePinModal() {
+  document.getElementById('pinModal').style.display = "none";
+}
+function closePayoutModal() {
+  document.getElementById('payoutModal').style.display = "none";
+}
+
+function verifyRetailerPIN() {
+  const input = document.getElementById('retailerPinInput').value.trim();
+  const retailerNumber = localStorage.getItem('retailUser') || "";
+  const expectedPin = retailerNumber.slice(-4); // last 4 digits
+  if (input === expectedPin) {
+    closePinModal();
+    showPayoutModal();
+  } else {
+    document.getElementById('pinError').style.display = "block";
+  }
+}
+
+// --- Payout logic (replace fetch with actual Sheet call in future) ---
+function showPayoutModal() {
+  // Display loader text while fetching
+  document.getElementById('payoutDetails').innerHTML = "Calculating your payout…";
+
+  // Dummy calculation (replace with real logic: fetch + filter for this retailer)
+  // Example: Suppose 12 orders this month, total sales = ₹20,000, payout = ₹2,000
+  setTimeout(() => {
+    // Use localStorage.getItem('retailUser') to get the current retailer mobile
+    // Replace this part with actual payout logic as needed.
+    document.getElementById('payoutDetails').innerHTML =
+      `Total Sales: <b>₹20,000</b><br>Payout (10%): <span style='color:#005c28;font-weight:700;'>₹2,000</span>`;
+  }, 800);
+
+  document.getElementById('payoutModal').style.display = "flex";
+}
