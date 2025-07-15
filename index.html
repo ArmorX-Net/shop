@@ -73,10 +73,27 @@
     </div>
   </div>
 
-  <!-- Saving Spinner (overlay, not inside any modal) -->
-  <div id="savingSpinner" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(255,255,255,0.80);z-index:1000;text-align:center;padding-top:140px;font-size:1.18em;">
-    <span>Saving order... Please wait.</span>
-  </div>   
+  <!-- PIN Modal (hidden by default) -->
+<div id="pinModal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:#0005; z-index:1000; align-items:center; justify-content:center;">
+  <div style="background:#fff; border-radius:10px; padding:32px 28px; text-align:center; min-width:250px; max-width:98vw;">
+    <h3>Enter Retailer PIN</h3>
+    <input id="retailerPinInput" type="password" maxlength="4" style="font-size:1.2em; letter-spacing:8px; text-align:center;" autocomplete="off"/>
+    <div id="pinError" style="display:none;color:#b20000;margin:10px 0 0;">Incorrect PIN. Try again!</div>
+    <div style="margin-top:16px;">
+      <button onclick="verifyRetailerPIN()" style="padding:7px 22px;">Submit</button>
+      <button onclick="closePinModal()" style="margin-left:12px;">Cancel</button>
+    </div>
+  </div>
+</div>
 
+<!-- Payout Modal (hidden by default) -->
+<div id="payoutModal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:#0005; z-index:1000; align-items:center; justify-content:center;">
+  <div style="background:#fff; border-radius:10px; padding:32px 28px; text-align:center; min-width:270px; max-width:99vw;">
+    <h3>Your Monthly Payout</h3>
+    <div id="payoutDetails" style="margin:14px 0 20px 0;">Calculating...</div>
+    <button onclick="closePayoutModal()" style="padding:7px 22px;">Close</button>
+  </div>
+</div>
+ 
 </body>
 </html>
