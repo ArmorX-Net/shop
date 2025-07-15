@@ -79,10 +79,10 @@
     <h3>Enter Retailer PIN</h3>
     <input id="retailerPinInput" type="password" maxlength="4" style="font-size:1.2em; letter-spacing:8px; text-align:center;" autocomplete="off"/>
     <div id="pinError" style="display:none;color:#b20000;margin:10px 0 0;">Incorrect PIN. Try again!</div>
-    <div style="margin-top:16px;">
-      <button onclick="verifyRetailerPIN()" style="padding:7px 22px;">Submit</button>
-      <button onclick="closePinModal()" style="margin-left:12px;">Cancel</button>
-    </div>
+    <div style="display: flex; gap: 14px; margin-top: 18px; justify-content:center;">
+  <button class="modal-btn submit-btn" onclick="verifyRetailerPIN()">Submit</button>
+  <button class="modal-btn cancel-btn" onclick="closePinModal()">Cancel</button>
+</div>
   </div>
 </div>
 
