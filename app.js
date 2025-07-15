@@ -372,3 +372,50 @@ function showPayoutModal() {
 
   document.getElementById('payoutModal').style.display = "flex";
 }
+<!-- Retailer Dashboard Modal (hidden by default) -->
+<div id="dashboardModal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:#0004; z-index:1100; align-items:center; justify-content:center;">
+  <div style="background:#fff; border-radius:16px; padding:34px 32px; text-align:center; min-width:310px; max-width:98vw;">
+    <h3 style="margin-bottom:16px; color:#226600;">Your Retailer Dashboard</h3>
+    <canvas id="ordersBarChart" style="width:100%;max-width:320px;height:140px;"></canvas>
+    <div style="margin:20px 0 12px 0;">
+      <b>Today's Sales:</b> <span id="todaySales">7</span>
+      &nbsp;|&nbsp;
+      <b>Last Payout:</b> <span id="lastPayout">₹1,200</span>
+      &nbsp;|&nbsp;
+      <b>Pending Payout:</b> <span id="pendingPayout">₹950</span>
+    </div>
+    <button class="modal-btn" onclick="closeDashboardModal()">Close</button>
+  </div>
+</div>
+function showDashboardModal() {
+  document.getElementById('dashboardModal').style.display = 'flex';
+
+  // Dummy sales data
+  let days = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  let sales = [3, 5, 2, 6, 7, 4, 8];
+  let ctx = document.getElementById('ordersBarChart').getContext('2d');
+  if (window.dashboardChart) window.dashboardChart.destroy();
+  window.dashboardChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: days,
+      datasets: [{
+        label: 'Orders',
+        data: sales,
+        backgroundColor: '#a8e063'
+      }]
+    },
+    options: {
+      responsive: false,
+      plugins: { legend: { display: false }},
+      scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+    }
+  });
+
+  document.getElementById('todaySales').innerText = sales[sales.length-1];
+  document.getElementById('lastPayout').innerText = '₹1,200';
+  document.getElementById('pendingPayout').innerText = '₹950';
+}
+function closeDashboardModal() {
+  document.getElementById('dashboardModal').style.display = 'none';
+}
