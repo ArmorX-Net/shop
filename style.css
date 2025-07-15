@@ -168,3 +168,24 @@ button:hover { background: var(--primary-dark); }
   box-shadow: 0 2px 7px #b9ffd3;
 }
 .upi-btn:hover { background: #1d674b; }
+.modal-btn {
+  padding: 12px 32px;
+  border: none;
+  border-radius: 10px;
+  font-size: 1.13em;
+  font-weight: 600;
+  background: #eaffc8;
+  color: #1a4400;
+  cursor: pointer;
+  box-shadow: 0 1px 5px #b6e87a55;
+  transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+}
+.modal-btn:hover {
+  background: #c5ff84;
+  color: #333;
+  box-shadow: 0 2px 8px #b6e87a99;
+}
+.submit-btn { background: #d3ffd3; color: #14661a; }
+.submit-btn:hover { background: #bcffbc; }
+.cancel-btn { background: #ffeaea; color: #b20000; }
+.cancel-btn:hover { background: #ffd0d0; }
