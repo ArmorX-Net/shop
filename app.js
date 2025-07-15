@@ -222,8 +222,11 @@ function sendOnWhatsApp() {
     if (!address) { alert('Please enter customer address for Home Delivery.'); return; }
   }
 
+  // Retail info from localStorage
   let retailerName = localStorage.getItem('retailUserName') || "";
   let retailerNumber = localStorage.getItem('retailUser') || "";
+
+  // --- Build WhatsApp message ---
   let msg = `ArmorX Order (Retailer: ${retailerName} - ${retailerNumber})\nCustomer: ${name} (${phone})\nDelivery: ${delivery}`;
   if (address) msg += `\nAddress: ${address}`;
   msg += `\n\nWindows:\n`;
@@ -268,9 +271,10 @@ function sendOnWhatsApp() {
     }
   });
 
+  // --- Build the orderObj for Google Sheet ---
   let orderObj = {
     timestamp: new Date().toISOString(),
-    order_id: "",
+    order_id: "", // leave blank for auto ID, or set custom if needed
     retailer_name: retailerName,
     retailer_mobile: retailerNumber,
     customer_name: name,
@@ -283,7 +287,30 @@ function sendOnWhatsApp() {
     wa_message: msg
   };
 
+  // 1. Open WhatsApp with the message
   let url = `https://wa.me/917304692553?text=${encodeURIComponent(msg)}`;
   window.open(url, '_blank');
+
+  // 2. Send to Google Sheet (only after WhatsApp opened)
   sendOrderToSheet(orderObj);
 }
+
+// This function is unchanged:
+function sendOrderToSheet(orderObj) {
+  fetch('https://shop-tan-nine.vercel.app/api/proxy', {
+    method: 'POST',
+    body: JSON.stringify(orderObj),
+    headers: {'Content-Type': 'application/json'}
+  })
+  .then(r => r.json())
+  .then(res => {
+    if(res.success) {
+      // Optionally, show a toast/alert: "Order saved in system!"
+    }
+  })
+  .catch(e => {
+    // Optionally, notify user/admin if logging to Sheet fails
+    console.error('Sheet logging failed:', e);
+  });
+}
+
