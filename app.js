@@ -349,11 +349,11 @@ function verifyRetailerPIN() {
   const retailerNumber = localStorage.getItem('retailUser') || "";
   const expectedPin = retailerNumber.slice(-4); // last 4 digits
   if (input === expectedPin) {
-    closePinModal();
-    showPayoutModal();
-  } else {
-    document.getElementById('pinError').style.display = "block";
-  }
+  closePinModal();
+  showDashboardModal(); // << call your dashboard modal function here!
+} else {
+  document.getElementById('pinError').style.display = "block";
+}
 }
 
 // --- Payout logic (replace fetch with actual Sheet call in future) ---
