@@ -364,29 +364,14 @@ function showPayoutModal() {
   // Dummy calculation (replace with real logic: fetch + filter for this retailer)
   // Example: Suppose 12 orders this month, total sales = ₹20,000, payout = ₹2,000
   setTimeout(() => {
-    // Use localStorage.getItem('retailUser') to get the current retailer mobile
-    // Replace this part with actual payout logic as needed.
     document.getElementById('payoutDetails').innerHTML =
       `Total Sales: <b>₹20,000</b><br>Payout (10%): <span style='color:#005c28;font-weight:700;'>₹2,000</span>`;
   }, 800);
 
   document.getElementById('payoutModal').style.display = "flex";
 }
-<!-- Retailer Dashboard Modal (hidden by default) -->
-<div id="dashboardModal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:#0004; z-index:1100; align-items:center; justify-content:center;">
-  <div style="background:#fff; border-radius:16px; padding:34px 32px; text-align:center; min-width:310px; max-width:98vw;">
-    <h3 style="margin-bottom:16px; color:#226600;">Your Retailer Dashboard</h3>
-    <canvas id="ordersBarChart" style="width:100%;max-width:320px;height:140px;"></canvas>
-    <div style="margin:20px 0 12px 0;">
-      <b>Today's Sales:</b> <span id="todaySales">7</span>
-      &nbsp;|&nbsp;
-      <b>Last Payout:</b> <span id="lastPayout">₹1,200</span>
-      &nbsp;|&nbsp;
-      <b>Pending Payout:</b> <span id="pendingPayout">₹950</span>
-    </div>
-    <button class="modal-btn" onclick="closeDashboardModal()">Close</button>
-  </div>
-</div>
+
+// --- Dashboard Modal logic ---
 function showDashboardModal() {
   document.getElementById('dashboardModal').style.display = 'flex';
 
