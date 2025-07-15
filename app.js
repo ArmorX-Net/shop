@@ -373,11 +373,22 @@ function showPayoutModal() {
 
 // --- Dashboard Modal logic ---
 function showDashboardModal() {
-  document.getElementById('dashboardModal').style.display = 'flex';
+  // Dummy data
+  const retailerName = localStorage.getItem('retailUserName') || "Retailer";
+  const todayOrders = 8, yesterdayOrders = 7;
+  const growth = ((todayOrders - yesterdayOrders)/Math.max(1,yesterdayOrders) * 100).toFixed(1) + "%";
+  const monthSales = 27000, pending = 1800, lastPayout = 2300;
 
-  // Dummy sales data
+  document.getElementById('retailerDashName').innerText = retailerName;
+  document.getElementById('dashTodayOrders').innerText = todayOrders;
+  document.getElementById('dashGrowth').innerText = (todayOrders - yesterdayOrders >= 0 ? "+" : "") + growth;
+  document.getElementById('dashMonthSales').innerText = "₹" + monthSales.toLocaleString();
+  document.getElementById('dashPending').innerText = "₹" + pending.toLocaleString();
+  document.getElementById('dashLastPayout').innerText = "₹" + lastPayout.toLocaleString();
+
+  // Dummy order trend (7 days)
   let days = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
-  let sales = [3, 5, 2, 6, 7, 4, 8];
+  let sales = [4, 6, 3, 8, 7, 5, todayOrders];
   let ctx = document.getElementById('ordersBarChart').getContext('2d');
   if (window.dashboardChart) window.dashboardChart.destroy();
   window.dashboardChart = new Chart(ctx, {
@@ -397,9 +408,23 @@ function showDashboardModal() {
     }
   });
 
-  document.getElementById('todaySales').innerText = sales[sales.length-1];
-  document.getElementById('lastPayout').innerText = '₹1,200';
-  document.getElementById('pendingPayout').innerText = '₹950';
+  // Dummy recent orders
+  document.getElementById('dashRecentOrders').innerHTML = `
+    <div>ORD20240715-01 | <b>₹1,200</b> | <span style="color:#007b1c">Confirmed</span></div>
+    <div>ORD20240715-02 | <b>₹2,100</b> | <span style="color:#bfa000">Pending</span></div>
+    <div>ORD20240714-05 | <b>₹700</b> | <span style="color:#007b1c">Confirmed</span></div>
+    <div>ORD20240713-03 | <b>₹2,300</b> | <span style="color:#e25c04">Cancelled</span></div>
+    <div>ORD20240713-01 | <b>₹1,850</b> | <span style="color:#007b1c">Confirmed</span></div>
+  `;
+
+  // Dummy payout table
+  document.getElementById('dashPayoutTable').innerHTML = `
+    <tr><td>15 Jul</td><td>₹2,300</td><td><span style="color:#14b01c">Paid</span></td></tr>
+    <tr><td>7 Jul</td><td>₹1,850</td><td><span style="color:#bfa000">Processing</span></td></tr>
+    <tr><td>1 Jul</td><td>₹1,750</td><td><span style="color:#14b01c">Paid</span></td></tr>
+  `;
+
+  document.getElementById('dashboardModal').style.display = 'flex';
 }
 function closeDashboardModal() {
   document.getElementById('dashboardModal').style.display = 'none';
