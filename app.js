@@ -83,8 +83,10 @@ function addWindowEntry() {
       <input type="number" min="1" value="1" id="qty${idx}" placeholder="Qty" oninput="calcPrice(${idx})"/>
     </div>
     <div class="price-link">
-      <span class="price-label">Deal Price: ₹<span class="price-value" id="p${idx}">0</span></span>
-    </div>
+  <span class="price-label">Deal Price: ₹<span class="price-value" id="p${idx}">0</span></span>
+  <a id="a${idx}" href="#" target="_blank" style="display:none; font-size:0.98em; color:#2856A5; margin-left:8px;">Amazon</a>
+</div>
+
   `;
   document.getElementById('windows-list').appendChild(wBox);
 }
@@ -99,33 +101,109 @@ function calcPrice(idx) {
   let u = document.getElementById('u' + idx).value;
   let c = document.getElementById('c' + idx).value;
   let qty = parseInt(document.getElementById('qty' + idx).value || 1);
+
+  // Convert to cm for checking limits
+  let hCm = u === "Cm" ? h : (u === "Inch" ? h * 2.54 : h * 30.48);
+  let wCm = u === "Cm" ? w : (u === "Inch" ? w * 2.54 : w * 30.48);
+
+   // Check BOTH orientations for exceeding limits
+  if ((hCm > 185 && wCm > 340) || (hCm > 340 && wCm > 185)) {
+    showSizeLimitPopup();
+    // Clear input fields for this entry
+    document.getElementById('h' + idx).value = '';
+    document.getElementById('w' + idx).value = '';
+    document.getElementById('p' + idx).innerText = '0';
+    let a = document.getElementById('a' + idx);
+    if (a) a.style.display = 'none';
+    updateTotal();
+    return;
+}
+
   if (!h || !w || !qty) {
     document.getElementById('p' + idx).innerText = '0';
+    let a = document.getElementById('a' + idx);
+    if (a) a.style.display = 'none';
     updateTotal(); return;
   }
-  let h_cm = u === "Cm" ? h : (u === "Inch" ? h * 2.54 : h * 30.48);
-  let w_cm = u === "Cm" ? w : (u === "Inch" ? w * 2.54 : w * 30.48);
-  let best = findClosestSize(h_cm, w_cm, c);
+
+  let best = findClosestSize(h, w, c, u);
   if (best) {
     let dealUnit = parseFloat(best['Deal Price']) || 0;
     let dealPrice = dealUnit * qty;
     document.getElementById('p' + idx).innerText = dealPrice;
+    let a = document.getElementById('a' + idx);
+    if (a) {
+      a.href = best['Amazon Link'];
+      a.style.display = best['Amazon Link'] ? '' : 'none';
+    }
   } else {
     document.getElementById('p' + idx).innerText = '0';
+    let a = document.getElementById('a' + idx);
+    if (a) a.style.display = 'none';
   }
   updateTotal();
 }
-function findClosestSize(h_cm, w_cm, c) {
-  let filtered = netSizes.filter(x => x.Color === c && x.Unit === "Cm");
-  if (filtered.length === 0) return null;
-  let best = filtered[0],
-      bestDist = Math.abs(filtered[0]['Height(H)'] - h_cm) + Math.abs(filtered[0]['Width(W)'] - w_cm);
-  for (let item of filtered) {
-    let dist = Math.abs(item['Height(H)'] - h_cm) + Math.abs(item['Width(W)'] - w_cm);
-    if (dist < bestDist) { best = item; bestDist = dist; }
-  }
-  return best;
+
+
+
+// Utility: Normalize and cap sizes (returns [heightCm, widthCm])
+function normalizeSizes(h, w, unit) {
+  let hCm = unit === "Cm" ? h : (unit === "Inch" ? h * 2.54 : h * 30.48);
+  let wCm = unit === "Cm" ? w : (unit === "Inch" ? w * 2.54 : w * 30.48);
+  // Cap both sizes at 338 and 183 (either can be height or width)
+  let [bigger, smaller] = [Math.max(hCm, wCm), Math.min(hCm, wCm)];
+  bigger = Math.min(bigger, 338);
+  smaller = Math.min(smaller, 183);
+  return [bigger, smaller];
 }
+
+// Utility: Normalize and cap sizes (returns [heightCm, widthCm])
+function normalizeSizes(h, w, unit) {
+  let hCm = unit === "Cm" ? h : (unit === "Inch" ? h * 2.54 : h * 30.48);
+  let wCm = unit === "Cm" ? w : (unit === "Inch" ? w * 2.54 : w * 30.48);
+  // Cap both sizes at 338 and 183 (either can be height or width)
+  let [bigger, smaller] = [Math.max(hCm, wCm), Math.min(hCm, wCm)];
+  bigger = Math.min(bigger, 338);
+  smaller = Math.min(smaller, 183);
+  return [bigger, smaller];
+}
+
+function findClosestSize(h, w, color, unit = "Cm") {
+  // Normalize and cap entered sizes
+  const [enteredA, enteredB] = normalizeSizes(h, w, unit);
+  let closestMatch = null, smallestDifference = Infinity;
+  const penalty = 500, tolerance = 2.5;
+
+  // Filter by color and 'Cm'
+  const filtered = netSizes.filter(x =>
+    x.Unit === "Cm" && x.Color.toUpperCase() === color.toUpperCase()
+  );
+
+  filtered.forEach(size => {
+    let H = size['Height(H)'], W = size['Width(W)'];
+    // Orientation 1: enteredA~H, enteredB~W
+    let diff1 = 0;
+    if (H >= enteredA || (enteredA - H) <= tolerance) diff1 += Math.max(0, H - enteredA);
+    else diff1 += (enteredA - H) * penalty;
+    if (W >= enteredB || (enteredB - W) <= tolerance) diff1 += Math.max(0, W - enteredB);
+    else diff1 += (enteredB - W) * penalty;
+    // Orientation 2: enteredA~W, enteredB~H
+    let diff2 = 0;
+    if (W >= enteredA || (enteredA - W) <= tolerance) diff2 += Math.max(0, W - enteredA);
+    else diff2 += (enteredA - W) * penalty;
+    if (H >= enteredB || (enteredB - H) <= tolerance) diff2 += Math.max(0, H - enteredB);
+    else diff2 += (enteredB - H) * penalty;
+    const diff = Math.min(diff1, diff2);
+    if (diff < smallestDifference) {
+      smallestDifference = diff;
+      closestMatch = size;
+    }
+  });
+
+  // If nothing, return null
+  return closestMatch;
+}
+
 function updateTotal() {
   let total = 0;
   document.querySelectorAll('[id^=p]').forEach(span => {
@@ -146,26 +224,67 @@ function handleDeliveryChange() {
     addr.required = false;
   }
 }
+function showSizeLimitPopup() {
+    // WhatsApp message
+    let waMsg = encodeURIComponent("Hi ArmorX, I need a custom mosquito net size larger than the standard limits. Please assist!");
+    let waLink = "https://wa.me/917304692553?text=" + waMsg;
+    let callLink = "tel:7304692553";
+
+    // Simple HTML modal, style as you wish
+    let html = `
+      <div id="sizeLimitModal" style="position:fixed;top:0;left:0;width:100vw;height:100vh;background:#0006;z-index:9999;display:flex;align-items:center;justify-content:center;">
+        <div style="background:#fff;padding:28px 20px;border-radius:13px;max-width:310px;text-align:center;box-shadow:0 6px 32px #0001;">
+          <div style="font-size:1.35em;color:#d70000;margin-bottom:14px;font-weight:600;">Size Exceeds Limit</div>
+          <div style="margin-bottom:18px;">For sizes above <b>185cm x 340cm</b>, contact Team ArmorX for verification or custom order.</div>
+          <a href="${waLink}" target="_blank" style="background:#25d366;color:#fff;font-weight:700;font-size:1.12em;padding:10px 18px;border-radius:7px;text-decoration:none;display:inline-block;margin-bottom:9px;">
+            <span style="font-size:1.3em;margin-right:7px;">🟢</span> WhatsApp Us
+          </a>
+          <br>
+          <a href="${callLink}" style="color:#1552d1;font-size:1.11em;text-decoration:underline;">📞 Call 7304692553</a>
+          <br><br>
+          <button onclick="document.getElementById('sizeLimitModal').remove()" style="margin-top:12px;background:#eee;color:#d70000;padding:6px 22px;border-radius:7px;border:none;cursor:pointer;">Close</button>
+        </div>
+      </div>
+    `;
+    document.body.insertAdjacentHTML('beforeend', html);
+}
 
 // ------- STEPPER LOGIC: BUTTON HANDLERS -------
 // Step 1 → Step 2: Validate & create Order ID
 function handleOrderDetailsNext() {
-  let name = document.getElementById('cust-name').value.trim();
-  let phone = document.getElementById('cust-phone').value.trim();
-  let delivery = document.getElementById('delivery-mode').value;
-  let address = (delivery === "Home Delivery") ? document.getElementById('cust-address').value.trim() : '';
+  const name = document.getElementById('cust-name').value.trim();
+  const phone = document.getElementById('cust-phone').value.trim();
+  const delivery = document.getElementById('delivery-mode').value;
+  const address = (delivery === "Home Delivery") ? document.getElementById('cust-address').value.trim() : '';
   let hasAny = false;
+
   document.querySelectorAll('.window-box').forEach((box) => {
-    let idx = box.id.split('-')[2];
-    let h = document.getElementById('h'+idx).value;
-    let w = document.getElementById('w'+idx).value;
-    let qty = document.getElementById('qty'+idx).value;
-    let price = document.getElementById('p'+idx).innerText;
-    if (h && w && price && qty > 0) hasAny = true;
+    const idx = box.id.split('-')[2];
+    const h = document.getElementById('h'+idx).value;
+    const w = document.getElementById('w'+idx).value;
+    const qty = Number(document.getElementById('qty'+idx).value || 0);
+    const price = parseFloat(document.getElementById('p'+idx).innerText || 0);
+    if (h && w && price > 0 && qty > 0) hasAny = true;
   });
-  if (!name || !/^\d{10}$/.test(phone)) { alert('Enter customer details correctly!'); return; }
-  if (delivery === "Home Delivery" && !address) { alert('Please enter customer address for Home Delivery.'); return; }
-  if (!hasAny) { alert('Please enter at least one window net details.'); return; }
+
+  if (!name || !/^\d{10}$/.test(phone)) {
+    alert('Enter customer details correctly!');
+    return;
+  }
+  if (delivery === "Home Delivery" && !address) {
+    alert('Please enter customer address for Home Delivery.');
+    return;
+  }
+  if (!hasAny) {
+    alert('Please enter at least one window net details.');
+    return;
+  }
+  // Check if total price is zero
+  const total = parseFloat(document.getElementById('total-price').innerText || '0');
+  if (total === 0) {
+    alert('Order total cannot be zero. Please enter valid window sizes.');
+    return;
+  }
 
   // --- Generate new Order ID here ---
   const retailerNumber = localStorage.getItem('retailUser') || "";
@@ -175,31 +294,32 @@ function handleOrderDetailsNext() {
   currentOrderId = `AXW-${last4}-${now.getFullYear().toString().slice(-2)}${pad(now.getMonth()+1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}`;
   document.getElementById('order-id-display').innerText = currentOrderId;
 
-// ---- Build summary like in handlePaymentNext() ----
-let summary = "";
-summary += `<b>Customer:</b> ${document.getElementById('cust-name').value} (${document.getElementById('cust-phone').value})<br>`;
-summary += `<b>Delivery:</b> ${document.getElementById('delivery-mode').value}`;
-if (document.getElementById('cust-address').style.display !== 'none')
-  summary += `<br><b>Address:</b> ${document.getElementById('cust-address').value}`;
-summary += "<hr><b>Windows:</b><br>";
-document.querySelectorAll('.window-box').forEach((box, i) => {
-  let idx = box.id.split('-')[2];
-  let h = document.getElementById('h'+idx).value;
-  let w = document.getElementById('w'+idx).value;
-  let u = document.getElementById('u'+idx).value;
-  let c = document.getElementById('c'+idx).value;
-  let qty = document.getElementById('qty'+idx).value;
-  let price = document.getElementById('p'+idx).innerText;
-  let colorName = { BK: 'Black', CR: 'Cream', GR: 'Grey', WH: 'White' }[c] || c;
-  if (h && w && price && qty > 0) {
-    summary += `#${i+1}: ${h}x${w} ${u} | ${colorName} | Qty: ${qty} | ₹${price}<br>`;
-  }
-});
-summary += `<hr><b>Total: ₹${document.getElementById('total-price').innerText}</b>`;
-document.getElementById('payment-order-summary').innerHTML = summary;
+  // ---- Build summary like in handlePaymentNext() ----
+  let summary = "";
+  summary += `<b>Customer:</b> ${name} (${phone})<br>`;
+  summary += `<b>Delivery:</b> ${delivery}`;
+  if (document.getElementById('cust-address').style.display !== 'none')
+    summary += `<br><b>Address:</b> ${address}`;
+  summary += "<hr><b>Windows:</b><br>";
+  document.querySelectorAll('.window-box').forEach((box, i) => {
+    const idx = box.id.split('-')[2];
+    const h = document.getElementById('h'+idx).value;
+    const w = document.getElementById('w'+idx).value;
+    const u = document.getElementById('u'+idx).value;
+    const c = document.getElementById('c'+idx).value;
+    const qty = document.getElementById('qty'+idx).value;
+    const price = document.getElementById('p'+idx).innerText;
+    const colorName = { BK: 'Black', CR: 'Cream', GR: 'Grey', WH: 'White' }[c] || c;
+    if (h && w && price && qty > 0) {
+      summary += `#${i+1}: ${h}x${w} ${u} | ${colorName} | Qty: ${qty} | ₹${price}<br>`;
+    }
+  });
+  summary += `<hr><b>Total: ₹${document.getElementById('total-price').innerText}</b>`;
+  document.getElementById('payment-order-summary').innerHTML = summary;
 
-showStep(2);
+  showStep(2);
 }
+
 // Payment checkbox
 function togglePaymentNextBtn() {
   document.getElementById('step2-next-btn').disabled = !document.getElementById('payment-collected-checkbox').checked;
